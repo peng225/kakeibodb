@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -37,4 +36,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// addTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
+	addTagCmd.Flags().IntP("tagID", "t", 0, "Tag ID")
 }

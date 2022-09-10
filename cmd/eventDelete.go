@@ -36,4 +36,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// eventDeleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	eventDeleteCmd.Flags().IntP("eventID", "e", 0, "Event ID")
 }
