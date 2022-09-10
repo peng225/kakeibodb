@@ -4,7 +4,8 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
+	"kakeibodb/usecase"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -20,7 +21,23 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("load called")
+		file, err := cmd.Flags().GetString("file")
+		if err != nil {
+			log.Fatal(err)
+		}
+		dir, err := cmd.Flags().GetString("dir")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if file == "" && dir == "" {
+			log.Fatal("either file or dir must be specified.")
+		} else if file != "" && dir != "" {
+			log.Fatal("both file and dir cannot be specified.")
+		} else if file != "" {
+			usecase.LoadEventFromFile(file)
+		} else {
+			usecase.LoadEventFromDir(dir)
+		}
 	},
 }
 
@@ -37,5 +54,5 @@ func init() {
 	// is called directly, e.g.:
 	// loadCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	loadCmd.Flags().StringP("file", "f", "", "Input file path")
-	loadCmd.Flags().StringP("dir", "d", ".", "Input directory path")
+	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
 }
