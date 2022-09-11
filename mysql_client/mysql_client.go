@@ -2,6 +2,7 @@ package mysql_client
 
 import (
 	"database/sql"
+	"kakeibodb/db_client"
 	"log"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 type MySQLClient struct {
 	db *sql.DB
 }
+
+var _ db_client.DBClient = (*MySQLClient)(nil)
 
 func NewMySQLClient() *MySQLClient {
 	return &MySQLClient{}
