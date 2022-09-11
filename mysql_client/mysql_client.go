@@ -50,7 +50,7 @@ func (mc *MySQLClient) InsertEvent(date string, money int, description string) {
 }
 
 func (mc *MySQLClient) InsertTag(tag string) {
-	stmtIns, err := mc.db.Prepare("insert into event VALUES(?, ?)")
+	stmtIns, err := mc.db.Prepare("insert into tag VALUES(?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func (mc *MySQLClient) InsertTag(tag string) {
 }
 
 func (mc *MySQLClient) InsertMap(eventID, tagID int) {
-	stmtIns, err := mc.db.Prepare("insert into event VALUES(?, ?)")
+	stmtIns, err := mc.db.Prepare("insert into event_to_tag VALUES(?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
