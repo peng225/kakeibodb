@@ -2,6 +2,7 @@ package mysql_client
 
 import (
 	"database/sql"
+	"fmt"
 	"kakeibodb/db_client"
 	"log"
 	"time"
@@ -75,5 +76,65 @@ func (mc *MySQLClient) InsertMap(eventID, tagID int) {
 	_, err = stmtIns.Exec(eventID, tagID)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func (mc *MySQLClient) SelectEventAll() {
+	rows, err := mc.db.Query(fmt.Sprintf("select * from %s", db_client.EventTableName))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print header
+	for _, column := range columns {
+		fmt.Printf("%s\t", column)
+	}
+	fmt.Println("")
+
+	// Print body
+	for rows.Next() {
+		var id int
+		var date string
+		var money int
+		var desc string
+		err := rows.Scan(&id, &date, &money, &desc)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%v\t%v\t%v\t%v\n", id, date, money, desc)
+	}
+}
+
+func (mc *MySQLClient) SelectTagAll() {
+	rows, err := mc.db.Query(fmt.Sprintf("select * from %s", db_client.TagTableName))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print header
+	for _, column := range columns {
+		fmt.Printf("%s\t", column)
+	}
+	fmt.Println("")
+
+	// Print body
+	for rows.Next() {
+		var id int
+		var tagName string
+		err := rows.Scan(&id, &tagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%v\t%v\n", id, tagName)
 	}
 }

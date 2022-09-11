@@ -6,6 +6,7 @@ type DBClient interface {
 	InsertEvent(date string, money int, description string)
 	InsertTag(tag string)
 	InsertMap(eventID, tagID int)
-	// Select(id int, table string)
-	// Delete(id int, table string)
+	SelectEventAll()
+	SelectTagAll()
+	// Delete(id int, tableName string)
 }
