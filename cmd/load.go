@@ -4,6 +4,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
 	"log"
 
@@ -29,14 +30,15 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		leh := usecase.NewLoadEventHander(mysql_client.NewMySQLClient())
 		if file == "" && dir == "" {
 			log.Fatal("either file or dir must be specified.")
 		} else if file != "" && dir != "" {
 			log.Fatal("both file and dir cannot be specified.")
 		} else if file != "" {
-			usecase.LoadEventFromFile(file)
+			leh.LoadEventFromFile(file)
 		} else {
-			usecase.LoadEventFromDir(dir)
+			leh.LoadEventFromDir(dir)
 		}
 	},
 }

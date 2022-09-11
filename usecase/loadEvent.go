@@ -2,20 +2,30 @@ package usecase
 
 import (
 	"fmt"
+	"kakeibodb/db_client"
 	"kakeibodb/event"
-	"kakeibodb/mysql_client"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 )
 
-func LoadEventFromFile(file string) {
+type LoadEventHandler struct {
+	dbClient db_client.DBClient
+}
+
+func NewLoadEventHander(dc db_client.DBClient) *LoadEventHandler {
+	return &LoadEventHandler{
+		dbClient: dc,
+	}
+}
+
+func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 	bankCSV := event.NewBankCSV()
 	bankCSV.Open(file)
 
-	mysqlClient := mysql_client.NewMySQLClient()
-	mysqlClient.Open("kakeibo", "shinya")
+	leh.dbClient.Open(db_client.DBName, "shinya")
+	defer leh.dbClient.Close()
 
 	// Skip header
 	_ = bankCSV.Read()
@@ -45,11 +55,11 @@ func LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
-		mysqlClient.InsertEvent(date, money, desc)
+		leh.dbClient.InsertEvent(date, money, desc)
 	}
 }
 
-func LoadEventFromDir(dir string) {
+func (leh *LoadEventHandler) LoadEventFromDir(dir string) {
 	var files []string
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -74,6 +84,6 @@ func LoadEventFromDir(dir string) {
 	}
 
 	for _, file := range files {
-		LoadEventFromFile(file)
+		leh.LoadEventFromFile(file)
 	}
 }
