@@ -27,6 +27,8 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 	leh.dbClient.Open(db_client.DBName, "shinya")
 	defer leh.dbClient.Close()
 
+	log.Printf("load from %s\n", file)
+
 	// Skip header
 	_ = bankCSV.Read()
 	for {
@@ -55,6 +57,7 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
+		log.Printf("insert value (%v, %v, %v))\n", date, money, desc)
 		leh.dbClient.InsertEvent(date, money, desc)
 	}
 }
