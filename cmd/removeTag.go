@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addTagCmd represents the addTag command
-var addTagCmd = &cobra.Command{
-	Use:   "addTag",
+// removeTagCmd represents the removeTag command
+var removeTagCmd = &cobra.Command{
+	Use:   "removeTag",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -35,22 +35,22 @@ to quickly create a Cobra application.`,
 		}
 
 		eh := usecase.NewEventHander(mysql_client.NewMySQLClient())
-		eh.AddTag(eventID, tagID)
+		eh.RemoveTag(eventID, tagID)
 	},
 }
 
 func init() {
-	eventCmd.AddCommand(addTagCmd)
+	eventCmd.AddCommand(removeTagCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// addTagCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// removeTagCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// addTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	addTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
-	addTagCmd.Flags().IntP("tagID", "t", 0, "Tag ID")
+	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	removeTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
+	removeTagCmd.Flags().IntP("tagID", "t", 0, "Tag ID")
 }

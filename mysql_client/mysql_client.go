@@ -151,3 +151,16 @@ func (mc *MySQLClient) DeleteTag(id int) {
 		log.Fatal(err)
 	}
 }
+
+func (mc *MySQLClient) DeleteMap(eventID, tagID int) {
+	stmtIns, err := mc.db.Prepare("delete from event_to_tag where event_id = ? and tag_id = ?")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmtIns.Close()
+
+	_, err = stmtIns.Exec(eventID, tagID)
+	if err != nil {
+		log.Fatal(err)
+	}
+}

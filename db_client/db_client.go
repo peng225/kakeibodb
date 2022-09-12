@@ -9,4 +9,5 @@ type DBClient interface {
 	SelectEventAll()
 	SelectTagAll()
 	DeleteTag(id int)
+	DeleteMap(eventID, tagID int)
 }
