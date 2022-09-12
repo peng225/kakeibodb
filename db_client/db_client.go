@@ -8,5 +8,5 @@ type DBClient interface {
 	InsertMap(eventID, tagID int)
 	SelectEventAll()
 	SelectTagAll()
-	// Delete(id int, tableName string)
+	DeleteTag(id int)
 }

@@ -138,3 +138,16 @@ func (mc *MySQLClient) SelectTagAll() {
 		fmt.Printf("%v\t%v\n", id, tagName)
 	}
 }
+
+func (mc *MySQLClient) DeleteTag(id int) {
+	stmtIns, err := mc.db.Prepare("delete from tag where id = ?")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmtIns.Close()
+
+	_, err = stmtIns.Exec(id)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
