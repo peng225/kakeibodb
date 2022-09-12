@@ -4,7 +4,9 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
+	"kakeibodb/mysql_client"
+	"kakeibodb/usecase"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -20,7 +22,16 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("tagCreate called")
+		tagName, err := cmd.Flags().GetString("name")
+		if err != nil {
+			log.Fatal(err)
+		}
+		cth := usecase.NewCreateTagHander(mysql_client.NewMySQLClient())
+		if tagName == "" {
+			log.Fatal("tag name must be specified.")
+		}
+
+		cth.CreateTag(tagName)
 	},
 }
 

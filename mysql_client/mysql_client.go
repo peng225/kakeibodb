@@ -53,14 +53,14 @@ func (mc *MySQLClient) InsertEvent(date string, money int, description string) {
 	}
 }
 
-func (mc *MySQLClient) InsertTag(tag string) {
+func (mc *MySQLClient) InsertTag(name string) {
 	stmtIns, err := mc.db.Prepare("insert into tag VALUES(?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmtIns.Close()
 
-	_, err = stmtIns.Exec(0, tag)
+	_, err = stmtIns.Exec(0, name)
 	if err != nil {
 		log.Fatal(err)
 	}
