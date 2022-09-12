@@ -26,11 +26,11 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		th := usecase.NewTagHander(mysql_client.NewMySQLClient())
 		if tagID == 0 {
 			log.Fatal("tagID must be specified.")
 		}
 
+		th := usecase.NewTagHander(mysql_client.NewMySQLClient())
 		th.DeleteTag(tagID)
 	},
 }
