@@ -80,7 +80,14 @@ func (mc *MySQLClient) InsertMap(eventID, tagID int) {
 }
 
 func (mc *MySQLClient) SelectEventAll() {
-	rows, err := mc.db.Query(fmt.Sprintf("select * from %s", db_client.EventTableName))
+	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id group by %s.id order by event.dt;",
+		db_client.EventTableName, db_client.TagTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName)
+	fmt.Println(queryStr)
+	rows, err := mc.db.Query(queryStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,11 +109,16 @@ func (mc *MySQLClient) SelectEventAll() {
 		var date string
 		var money int
 		var desc string
-		err := rows.Scan(&id, &date, &money, &desc)
+		var tags any
+		err := rows.Scan(&id, &date, &money, &desc, &tags)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%v\t%v\t%v\t%v\n", id, date, money, desc)
+		if tags == nil {
+			fmt.Printf("%v\t%v\t%8d\t%-32s\tNULL\n", id, date, money, desc)
+		} else {
+			fmt.Printf("%v\t%v\t%8d\t%-32s\t%s\n", id, date, money, desc, tags)
+		}
 	}
 }
 
