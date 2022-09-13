@@ -176,3 +176,15 @@ func (mc *MySQLClient) DeleteMap(eventID, tagID int) {
 		log.Fatal(err)
 	}
 }
+
+func (mc *MySQLClient) GetTagIDFromName(tagName string) int {
+	row := mc.db.QueryRow(fmt.Sprintf("select %s.id from %s where %s.name = '%s'",
+		db_client.TagTableName, db_client.TagTableName, db_client.TagTableName, tagName))
+
+	var tagID int
+	err := row.Scan(&tagID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return tagID
+}

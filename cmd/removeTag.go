@@ -26,16 +26,16 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		tagID, err := cmd.Flags().GetInt("tagID")
+		tagName, err := cmd.Flags().GetString("tagName")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if eventID == 0 && tagID == 0 {
-			log.Fatal("both eventID and tagID must be specified.")
+		if eventID == 0 && tagName == "" {
+			log.Fatal("both eventID and tagName must be specified.")
 		}
 
 		eh := usecase.NewEventHander(mysql_client.NewMySQLClient())
-		eh.RemoveTag(eventID, tagID)
+		eh.RemoveTag(eventID, tagName)
 	},
 }
 
@@ -52,5 +52,5 @@ func init() {
 	// is called directly, e.g.:
 	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	removeTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
-	removeTagCmd.Flags().IntP("tagID", "t", 0, "Tag ID")
+	removeTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
 }
