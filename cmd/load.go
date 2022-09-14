@@ -30,7 +30,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		leh := usecase.NewLoadEventHander(mysql_client.NewMySQLClient())
+		leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient())
 		if file == "" && dir == "" {
 			log.Fatal("either file or dir must be specified.")
 		} else if file != "" && dir != "" {

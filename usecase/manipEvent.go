@@ -6,7 +6,7 @@ type EventHandler struct {
 	dbClient db_client.DBClient
 }
 
-func NewEventHander(dc db_client.DBClient) *EventHandler {
+func NewEventHandler(dc db_client.DBClient) *EventHandler {
 	return &EventHandler{
 		dbClient: dc,
 	}

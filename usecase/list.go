@@ -8,7 +8,7 @@ type ListHandler struct {
 	dbClient db_client.DBClient
 }
 
-func NewListHander(dc db_client.DBClient) *ListHandler {
+func NewListHandler(dc db_client.DBClient) *ListHandler {
 	return &ListHandler{
 		dbClient: dc,
 	}

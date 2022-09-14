@@ -34,7 +34,7 @@ to quickly create a Cobra application.`,
 			log.Fatal("both eventID and tagName must be specified.")
 		}
 
-		eh := usecase.NewEventHander(mysql_client.NewMySQLClient())
+		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient())
 		eh.RemoveTag(eventID, tagName)
 	},
 }

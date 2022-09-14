@@ -6,7 +6,7 @@ type TagHandler struct {
 	dbClient db_client.DBClient
 }
 
-func NewTagHander(dc db_client.DBClient) *TagHandler {
+func NewTagHandler(dc db_client.DBClient) *TagHandler {
 	return &TagHandler{
 		dbClient: dc,
 	}

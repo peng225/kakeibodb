@@ -14,7 +14,7 @@ type LoadEventHandler struct {
 	dbClient db_client.DBClient
 }
 
-func NewLoadEventHander(dc db_client.DBClient) *LoadEventHandler {
+func NewLoadEventHandler(dc db_client.DBClient) *LoadEventHandler {
 	return &LoadEventHandler{
 		dbClient: dc,
 	}
