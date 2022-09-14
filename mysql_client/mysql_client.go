@@ -86,7 +86,6 @@ func (mc *MySQLClient) SelectEventAll() {
 		db_client.EventTableName, db_client.MapTableName,
 		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
 		db_client.EventTableName)
-	fmt.Println(queryStr)
 	rows, err := mc.db.Query(queryStr)
 	if err != nil {
 		log.Fatal(err)
