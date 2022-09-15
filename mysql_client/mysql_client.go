@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"kakeibodb/db_client"
 	"log"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -186,4 +187,54 @@ func (mc *MySQLClient) GetTagIDFromName(tagName string) int {
 		log.Fatal(err)
 	}
 	return tagID
+}
+
+func (mc *MySQLClient) GetMoneySum(from, to string) int {
+	row := mc.db.QueryRow(fmt.Sprintf("select -sum(%s.money) from %s where (%s.dt between '%s' and '%s') and (%s.money < 0);",
+		db_client.EventTableName, db_client.EventTableName,
+		db_client.EventTableName, from, to,
+		db_client.EventTableName))
+
+	var money int
+	err := row.Scan(&money)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return money
+}
+
+func singleQuoteEachString(tags []string) []string {
+	resultTags := make([]string, len(tags))
+	for i, tag := range tags {
+		resultTags[i] = "'" + tag + "'"
+	}
+	return resultTags
+}
+
+func (mc *MySQLClient) GetMoneySumForAllTags(tags []string, from, to string) int {
+	singleQuotedTags := singleQuoteEachString(tags)
+	queryStr := fmt.Sprintf("select sum(matched_money.tmp_money) from (select -max(money) as tmp_money from ((event inner join event_to_tag on event.id = event_to_tag.event_id) inner join tag on tag.id = event_to_tag.tag_id) where tag.name in (%s) and event.money < 0 and (event.dt between '%s' and '%s') group by event.id having count(event.id) = %d) as matched_money",
+		strings.Join(singleQuotedTags, ","), from, to, len(tags))
+	row := mc.db.QueryRow(queryStr)
+
+	var money int
+	err := row.Scan(&money)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return money
+}
+
+func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int {
+	singleQuotedTags := singleQuoteEachString(tags)
+	queryStr := fmt.Sprintf("select sum(matched_money.tmp_money) from (select -max(money) as tmp_money from ((event inner join event_to_tag on event.id = event_to_tag.event_id) inner join tag on tag.id = event_to_tag.tag_id) where tag.name in (%s) and event.money < 0 and (event.dt between '%s' and '%s') group by event.id) as matched_money",
+		strings.Join(singleQuotedTags, ","), from, to)
+	row := mc.db.QueryRow(queryStr)
+
+	var money int
+	err := row.Scan(&money)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return money
 }
