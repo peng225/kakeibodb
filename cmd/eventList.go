@@ -6,6 +6,7 @@ package cmd
 import (
 	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -21,8 +22,17 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		from, err := cmd.Flags().GetString("from")
+		if err != nil {
+			log.Fatal(err)
+		}
+		to, err := cmd.Flags().GetString("to")
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		lh := usecase.NewListHandler(mysql_client.NewMySQLClient())
-		lh.ListEvent()
+		lh.ListEvent(from, to)
 	},
 }
 
@@ -38,4 +48,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// eventListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	eventListCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
+	eventListCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
 }

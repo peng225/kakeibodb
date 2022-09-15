@@ -80,12 +80,13 @@ func (mc *MySQLClient) InsertMap(eventID, tagID int) {
 	}
 }
 
-func (mc *MySQLClient) SelectEventAll() {
-	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id group by %s.id order by event.dt;",
+func (mc *MySQLClient) SelectEventAll(from, to string) {
+	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
 		db_client.EventTableName, db_client.MapTableName,
 		db_client.EventTableName, db_client.MapTableName,
 		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		from, to,
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
 	if err != nil {

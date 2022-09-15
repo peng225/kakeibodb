@@ -14,11 +14,11 @@ func NewListHandler(dc db_client.DBClient) *ListHandler {
 	}
 }
 
-func (lh *ListHandler) ListEvent() {
+func (lh *ListHandler) ListEvent(from, to string) {
 	lh.dbClient.Open(db_client.DBName, "shinya")
 	defer lh.dbClient.Close()
 
-	lh.dbClient.SelectEventAll()
+	lh.dbClient.SelectEventAll(from, to)
 }
 
 func (lh *ListHandler) ListTag() {
