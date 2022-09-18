@@ -239,3 +239,16 @@ func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int
 	}
 	return money
 }
+
+func (mc *MySQLClient) InsertCreditEvent(relatedBankEventID int, date string, money int, description string) {
+	stmtIns, err := mc.db.Prepare("insert into credit_event VALUES(?, ?, ?, ?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmtIns.Close()
+
+	_, err = stmtIns.Exec(0, relatedBankEventID, date, money, description)
+	if err != nil {
+		log.Fatal(err)
+	}
+}

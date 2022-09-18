@@ -7,16 +7,16 @@ import (
 	"strings"
 )
 
-type BankCSV struct {
+type CSV struct {
 	fp *os.File
 	sc *bufio.Scanner
 }
 
-func NewBankCSV() *BankCSV {
-	return &BankCSV{}
+func NewCSV() *CSV {
+	return &CSV{}
 }
 
-func (c *BankCSV) Open(filePath string) {
+func (c *CSV) Open(filePath string) {
 	var err error
 	c.fp, err = os.Open(filePath)
 	if err != nil {
@@ -24,11 +24,11 @@ func (c *BankCSV) Open(filePath string) {
 	}
 }
 
-func (c *BankCSV) Close() {
+func (c *CSV) Close() {
 	c.fp.Close()
 }
 
-func (c *BankCSV) Read() []string {
+func (c *CSV) Read() []string {
 	if c.sc == nil {
 		c.sc = bufio.NewScanner(c.fp)
 	}

@@ -21,8 +21,8 @@ func NewLoadEventHandler(dc db_client.DBClient) *LoadEventHandler {
 }
 
 func (leh *LoadEventHandler) LoadEventFromFile(file string) {
-	bankCSV := event.NewBankCSV()
-	bankCSV.Open(file)
+	csv := event.NewCSV()
+	csv.Open(file)
 
 	leh.dbClient.Open(db_client.DBName, "shinya")
 	defer leh.dbClient.Close()
@@ -30,9 +30,9 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 	log.Printf("load from %s\n", file)
 
 	// Skip header
-	_ = bankCSV.Read()
+	_ = csv.Read()
 	for {
-		event := bankCSV.Read()
+		event := csv.Read()
 		if event == nil {
 			break
 		}

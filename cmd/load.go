@@ -30,15 +30,38 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient())
+		credit, err := cmd.Flags().GetBool("credit")
+		if err != nil {
+			log.Fatal(err)
+		}
+		parentEventID, err := cmd.Flags().GetInt("parentEventID")
+		if err != nil {
+			log.Fatal(err)
+		}
 		if file == "" && dir == "" {
 			log.Fatal("either file or dir must be specified.")
 		} else if file != "" && dir != "" {
 			log.Fatal("both file and dir cannot be specified.")
-		} else if file != "" {
-			leh.LoadEventFromFile(file)
+		}
+
+		if credit {
+			if file == "" {
+				log.Fatal("file path must be specified for credit mode.")
+			}
+			if parentEventID < 0 {
+				log.Fatalf("invalid parentEventID %d\n", parentEventID)
+			}
+			lceh := usecase.NewLoadCreditEventHandler(mysql_client.NewMySQLClient())
+			lceh.LoadCreditEventFromFile(file, parentEventID)
+
 		} else {
-			leh.LoadEventFromDir(dir)
+			leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient())
+			if file != "" {
+				leh.LoadEventFromFile(file)
+			} else {
+				leh.LoadEventFromDir(dir)
+			}
+
 		}
 	},
 }
@@ -57,4 +80,6 @@ func init() {
 	// loadCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	loadCmd.Flags().StringP("file", "f", "", "Input file path")
 	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
+	loadCmd.Flags().BoolP("credit", "", false, "Load credit card event data")
+	loadCmd.Flags().IntP("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
 }

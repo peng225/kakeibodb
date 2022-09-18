@@ -8,3 +8,9 @@ create table kakeibo.event_to_tag(
     foreign key (tag_id) references tag(id) on delete cascade,
     primary key(event_id, tag_id)
 );
+
+create table kakeibo.credit_event(
+    id int primary key auto_increment, event_id int,
+    dt date, money int, description varchar(32),
+    foreign key(event_id) references event(id) on delete cascade
+);
