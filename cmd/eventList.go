@@ -30,9 +30,17 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		credit, err := cmd.Flags().GetBool("credit")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		lh := usecase.NewListHandler(mysql_client.NewMySQLClient())
-		lh.ListEvent(from, to)
+		if credit {
+			lh.ListEventWithCredit(from, to)
+		} else {
+			lh.ListEvent(from, to)
+		}
 	},
 }
 
@@ -50,4 +58,5 @@ func init() {
 	// eventListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	eventListCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
 	eventListCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
+	eventListCmd.Flags().BoolP("credit", "", false, "List credit card event, too")
 }

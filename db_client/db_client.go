@@ -7,10 +7,13 @@ type DBClient interface {
 	InsertCreditEvent(relatedBankEventID int, date string, money int, description string)
 	InsertTag(name string)
 	InsertMap(eventID, tagID int)
+	InsertCreditMap(creditEventID, tagID int)
 	SelectEventAll(from, to string)
+	SelectEventAllWithCredit(from, to string)
 	SelectTagAll()
 	DeleteTag(id int)
 	DeleteMap(eventID, tagID int)
+	DeleteCreditMap(creditEventID, tagID int)
 	GetTagIDFromName(tagName string) int
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int

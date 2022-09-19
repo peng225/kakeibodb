@@ -30,12 +30,20 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		credit, err := cmd.Flags().GetBool("credit")
+		if err != nil {
+			log.Fatal(err)
+		}
 		if eventID == 0 && tagName == "" {
 			log.Fatal("both eventID and tagName must be specified.")
 		}
 
 		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient())
-		eh.RemoveTag(eventID, tagName)
+		if credit {
+			eh.CreditRemoveTag(eventID, tagName)
+		} else {
+			eh.RemoveTag(eventID, tagName)
+		}
 	},
 }
 
@@ -53,4 +61,5 @@ func init() {
 	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	removeTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
 	removeTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
+	removeTagCmd.Flags().BoolP("credit", "", false, "Remove a tag from a credit card event")
 }
