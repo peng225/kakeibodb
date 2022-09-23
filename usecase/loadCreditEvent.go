@@ -11,6 +11,12 @@ type LoadCreditEventHandler struct {
 	dbClient db_client.DBClient
 }
 
+type creditEvent struct {
+	date        string
+	money       int
+	description string
+}
+
 func NewLoadCreditEventHandler(dc db_client.DBClient) *LoadCreditEventHandler {
 	return &LoadCreditEventHandler{
 		dbClient: dc,
@@ -28,6 +34,7 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 
 	// Skip header
 	_ = csv.Read()
+	creditEvents := []creditEvent{}
 	for {
 		event := csv.Read()
 		if event == nil {
@@ -46,6 +53,27 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 		money *= -1
 
 		log.Printf("insert value (%v, %v, %v, %v))\n", relatedBankEventID, date, money, desc)
-		leh.dbClient.InsertCreditEvent(relatedBankEventID, date, money, desc)
+		creditEvents = append(creditEvents, creditEvent{
+			date:        date,
+			money:       money,
+			description: desc,
+		})
 	}
+
+	if !leh.deletingCorrectEvent(relatedBankEventID, creditEvents) {
+		log.Fatal("money mismatch between the deleting event and inserting credit card events.")
+	}
+	leh.dbClient.DeleteEvent(relatedBankEventID)
+	for _, ce := range creditEvents {
+		leh.dbClient.InsertEvent(ce.date, ce.money, ce.description)
+	}
+}
+
+func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []creditEvent) bool {
+	moneySum := 0
+	for _, ce := range creditEvents {
+		moneySum += ce.money
+	}
+	_, money, _ := leh.dbClient.SelectEvent(id)
+	return moneySum == money
 }

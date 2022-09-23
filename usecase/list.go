@@ -21,13 +21,6 @@ func (lh *ListHandler) ListEvent(from, to string) {
 	lh.dbClient.SelectEventAll(from, to)
 }
 
-func (lh *ListHandler) ListEventWithCredit(from, to string) {
-	lh.dbClient.Open(db_client.DBName, "shinya")
-	defer lh.dbClient.Close()
-
-	lh.dbClient.SelectEventAllWithCredit(from, to)
-}
-
 func (lh *ListHandler) ListTag() {
 	lh.dbClient.Open(db_client.DBName, "shinya")
 	defer lh.dbClient.Close()
