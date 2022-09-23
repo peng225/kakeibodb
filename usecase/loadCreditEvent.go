@@ -52,7 +52,6 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 		}
 		money *= -1
 
-		log.Printf("insert value (%v, %v, %v, %v))\n", relatedBankEventID, date, money, desc)
 		creditEvents = append(creditEvents, creditEvent{
 			date:        date,
 			money:       money,
@@ -63,10 +62,11 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 	if !leh.deletingCorrectEvent(relatedBankEventID, creditEvents) {
 		log.Fatal("money mismatch between the deleting event and inserting credit card events.")
 	}
-	leh.dbClient.DeleteEvent(relatedBankEventID)
 	for _, ce := range creditEvents {
-		leh.dbClient.InsertEvent(ce.date, ce.money, ce.description)
+		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, string([]rune(ce.description)[0:32]))
+		leh.dbClient.InsertEvent(ce.date, ce.money, string([]rune(ce.description)[0:32]))
 	}
+	leh.dbClient.DeleteEvent(relatedBankEventID)
 }
 
 func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []creditEvent) bool {
