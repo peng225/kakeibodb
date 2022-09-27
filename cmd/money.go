@@ -38,9 +38,17 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		analyze, err := cmd.Flags().GetBool("analyze")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		mh := usecase.NewMoneyHandler(mysql_client.NewMySQLClient())
-		mh.GetTotalMoney(tags, from, to)
+		if analyze {
+			mh.AnalyzeMoney(from, to)
+		} else {
+			mh.GetTotalMoney(tags, from, to)
+		}
 	},
 }
 
@@ -59,4 +67,5 @@ func init() {
 	moneyCmd.Flags().StringP("tags", "", "", `tag list (eg. "foo", "foo&var", "foo|var" etc.)`)
 	moneyCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
 	moneyCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
+	moneyCmd.Flags().BoolP("analyze", "", false, "calculate the ration the amount for all tags")
 }

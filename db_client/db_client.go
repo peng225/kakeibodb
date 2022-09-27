@@ -1,5 +1,10 @@
 package db_client
 
+type TagEntry struct {
+	ID      int
+	TagName string
+}
+
 type DBClient interface {
 	Open(dbName string, user string)
 	Close()
@@ -8,7 +13,7 @@ type DBClient interface {
 	InsertMap(eventID, tagID int)
 	SelectEvent(id int) (string, int, string)
 	SelectEventAll(from, to string)
-	SelectTagAll()
+	SelectTagAll() ([]string, []TagEntry)
 	DeleteEvent(id int)
 	DeleteTag(id int)
 	DeleteMap(eventID, tagID int)

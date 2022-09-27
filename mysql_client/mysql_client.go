@@ -2,6 +2,7 @@ package mysql_client
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"kakeibodb/db_client"
 	"log"
@@ -139,24 +140,18 @@ func (mc *MySQLClient) SelectEventAll(from, to string) {
 	}
 }
 
-func (mc *MySQLClient) SelectTagAll() {
+func (mc *MySQLClient) SelectTagAll() ([]string, []db_client.TagEntry) {
 	rows, err := mc.db.Query(fmt.Sprintf("select * from %s", db_client.TagTableName))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	columns, err := rows.Columns()
+	header, err := rows.Columns()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Print header
-	for _, column := range columns {
-		fmt.Printf("%s\t", column)
-	}
-	fmt.Println("")
-
-	// Print body
+	tagEntries := []db_client.TagEntry{}
 	for rows.Next() {
 		var id int
 		var tagName string
@@ -164,8 +159,9 @@ func (mc *MySQLClient) SelectTagAll() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%v\t%v\n", id, tagName)
+		tagEntries = append(tagEntries, db_client.TagEntry{ID: id, TagName: tagName})
 	}
+	return header, tagEntries
 }
 
 func (mc *MySQLClient) DeleteEvent(id int) {
@@ -250,7 +246,10 @@ func (mc *MySQLClient) GetMoneySumForAllTags(tags []string, from, to string) int
 	var money int
 	err := row.Scan(&money)
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Fatal(err)
+		}
+		money = 0
 	}
 	return money
 }
