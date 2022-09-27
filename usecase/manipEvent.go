@@ -12,12 +12,14 @@ func NewEventHandler(dc db_client.DBClient) *EventHandler {
 	}
 }
 
-func (eh *EventHandler) AddTag(eventID int, tagName string) {
+func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 	eh.dbClient.Open(db_client.DBName, "shinya")
 	defer eh.dbClient.Close()
 
-	tagID := eh.dbClient.GetTagIDFromName(tagName)
-	eh.dbClient.InsertMap(eventID, tagID)
+	for _, tagName := range tagNames {
+		tagID := eh.dbClient.GetTagIDFromName(tagName)
+		eh.dbClient.InsertMap(eventID, tagID)
+	}
 }
 
 func (eh *EventHandler) RemoveTag(eventID int, tagName string) {

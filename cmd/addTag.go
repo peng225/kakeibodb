@@ -7,6 +7,7 @@ import (
 	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
 	"log"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -26,16 +27,18 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		tagName, err := cmd.Flags().GetString("tagName")
+		tagNamesStr, err := cmd.Flags().GetString("tagName")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if eventID == 0 && tagName == "" {
+		if eventID == 0 && tagNamesStr == "" {
 			log.Fatal("both eventID and tagName must be specified.")
 		}
 
+		tagNames := strings.Split(tagNamesStr, ",")
+
 		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient())
-		eh.AddTag(eventID, tagName)
+		eh.AddTag(eventID, tagNames)
 	},
 }
 
