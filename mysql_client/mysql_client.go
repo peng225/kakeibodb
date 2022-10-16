@@ -71,17 +71,22 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 
 func (mc *MySQLClient) SelectByID(table string, id int) ([]any, error) {
 	queryStr := fmt.Sprintf("select * from "+table+" where id = %d", id)
-	row := mc.db.QueryRow(queryStr)
-
-	var tmpID int
-	var date string
-	var money int
-	var desc string
-	err := row.Scan(&tmpID, &date, &money, &desc)
+	rows, err := mc.db.Query(queryStr)
 	if err != nil {
 		return nil, err
 	}
-	return []any{date, money, desc}, nil
+
+	columns, err := rows.Columns()
+	data := make([]any, len(columns))
+
+	if !rows.Next() {
+		return nil, errors.New("rows.Next failed")
+	}
+	err = rows.Scan(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (mc *MySQLClient) SelectPaymentEvent(from, to string) {
