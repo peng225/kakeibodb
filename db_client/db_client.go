@@ -9,7 +9,7 @@ type DBClient interface {
 	Open(dbName string, user string)
 	Close()
 	Insert(table string, withID bool, data []any) error
-	SelectEvent(id int) (string, int, string)
+	SelectByID(table string, id int) ([]any, error)
 	SelectPaymentEvent(from, to string)
 	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)

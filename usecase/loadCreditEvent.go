@@ -81,6 +81,9 @@ func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []c
 	for _, ce := range creditEvents {
 		moneySum += ce.money
 	}
-	_, money, _ := leh.dbClient.SelectEvent(id)
-	return moneySum == money
+	data, err := leh.dbClient.SelectByID(db_client.EventTableName, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return moneySum == data[1].(int)
 }

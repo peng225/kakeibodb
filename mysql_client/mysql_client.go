@@ -69,20 +69,19 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 	return nil
 }
 
-func (mc *MySQLClient) SelectEvent(id int) (string, int, string) {
-	queryStr := fmt.Sprintf("select * from event where id = %d", id)
+func (mc *MySQLClient) SelectByID(table string, id int) ([]any, error) {
+	queryStr := fmt.Sprintf("select * from "+table+" where id = %d", id)
 	row := mc.db.QueryRow(queryStr)
 
-	// Print body
 	var tmpID int
 	var date string
 	var money int
 	var desc string
 	err := row.Scan(&tmpID, &date, &money, &desc)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return date, money, desc
+	return []any{date, money, desc}, nil
 }
 
 func (mc *MySQLClient) SelectPaymentEvent(from, to string) {
