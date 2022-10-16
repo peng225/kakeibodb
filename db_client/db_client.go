@@ -14,8 +14,7 @@ type DBClient interface {
 	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)
 	SelectTagAll() ([]string, []TagEntry)
-	DeleteEvent(id int)
-	DeleteTag(id int)
+	DeleteByID(table string, id int) error
 	DeleteMap(eventID, tagID int)
 	GetTagIDFromName(tagName string) int
 	GetMoneySum(from, to string) int

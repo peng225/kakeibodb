@@ -239,30 +239,18 @@ func (mc *MySQLClient) SelectTagAll() ([]string, []db_client.TagEntry) {
 	return header, tagEntries
 }
 
-func (mc *MySQLClient) DeleteEvent(id int) {
-	stmtIns, err := mc.db.Prepare("delete from event where id = ?")
+func (mc *MySQLClient) DeleteByID(table string, id int) error {
+	stmtIns, err := mc.db.Prepare("delete from " + table + " where id = ?")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer stmtIns.Close()
 
 	_, err = stmtIns.Exec(id)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-}
-
-func (mc *MySQLClient) DeleteTag(id int) {
-	stmtIns, err := mc.db.Prepare("delete from tag where id = ?")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmtIns.Close()
-
-	_, err = stmtIns.Exec(id)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
 
 func (mc *MySQLClient) DeleteMap(eventID, tagID int) {

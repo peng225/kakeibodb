@@ -70,7 +70,10 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 			log.Fatal(err)
 		}
 	}
-	leh.dbClient.DeleteEvent(relatedBankEventID)
+	err := leh.dbClient.DeleteByID(db_client.EventTableName, relatedBankEventID)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []creditEvent) bool {
