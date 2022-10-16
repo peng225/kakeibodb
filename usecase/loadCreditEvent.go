@@ -64,7 +64,11 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 	}
 	for _, ce := range creditEvents {
 		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, string([]rune(ce.description)[0:32]))
-		leh.dbClient.InsertEvent(ce.date, ce.money, string([]rune(ce.description)[0:32]))
+		var insertData []any = []any{ce.date, ce.money, string([]rune(ce.description)[0:32])}
+		err := leh.dbClient.Insert(db_client.EventTableName, true, insertData)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	leh.dbClient.DeleteEvent(relatedBankEventID)
 }

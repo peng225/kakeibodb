@@ -8,9 +8,7 @@ type TagEntry struct {
 type DBClient interface {
 	Open(dbName string, user string)
 	Close()
-	InsertEvent(date string, money int, description string)
-	InsertTag(name string)
-	InsertMap(eventID, tagID int)
+	Insert(table string, withID bool, data []any) error
 	SelectEvent(id int) (string, int, string)
 	SelectPaymentEvent(from, to string)
 	SelectPaymentEventWithAllTags(tags []string, from, to string)

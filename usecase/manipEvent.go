@@ -1,6 +1,9 @@
 package usecase
 
-import "kakeibodb/db_client"
+import (
+	"kakeibodb/db_client"
+	"log"
+)
 
 type EventHandler struct {
 	dbClient db_client.DBClient
@@ -18,7 +21,11 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 
 	for _, tagName := range tagNames {
 		tagID := eh.dbClient.GetTagIDFromName(tagName)
-		eh.dbClient.InsertMap(eventID, tagID)
+		var insertData []any = []any{eventID, tagID}
+		err := eh.dbClient.Insert(db_client.MapTableName, false, insertData)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

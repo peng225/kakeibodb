@@ -57,8 +57,12 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
-		log.Printf("insert value (%v, %v, %v)\n", date, money, desc)
-		leh.dbClient.InsertEvent(date, money, desc)
+		log.Printf("insert value (%v, %v, %v)\n", date, money, string([]rune(desc)[0:32]))
+		var insertData []any = []any{date, money, string([]rune(desc)[0:32])}
+		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

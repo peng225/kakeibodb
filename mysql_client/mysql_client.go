@@ -42,43 +42,31 @@ func (mc *MySQLClient) Close() {
 	mc.db.Close()
 }
 
-func (mc *MySQLClient) InsertEvent(date string, money int, description string) {
-	stmtIns, err := mc.db.Prepare("insert into event VALUES(?, ?, ?, ?)")
+func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
+	if data == nil || len(data) == 0 {
+		return errors.New("empty data.")
+	}
+	queryString := "insert into " + table + " VALUES(?"
+	if withID {
+		queryString += ",?"
+	}
+	queryString += strings.Repeat(",?", len(data)-1) + ")"
+	stmtIns, err := mc.db.Prepare(queryString)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer stmtIns.Close()
 
-	_, err = stmtIns.Exec(0, date, money, description)
-	if err != nil {
-		log.Fatal(err)
+	insertData := make([]any, 0)
+	if withID {
+		insertData = append(insertData, 0)
 	}
-}
-
-func (mc *MySQLClient) InsertTag(name string) {
-	stmtIns, err := mc.db.Prepare("insert into tag VALUES(?, ?)")
+	insertData = append(insertData, data...)
+	_, err = stmtIns.Exec(insertData...)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer stmtIns.Close()
-
-	_, err = stmtIns.Exec(0, name)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (mc *MySQLClient) InsertMap(eventID, tagID int) {
-	stmtIns, err := mc.db.Prepare("insert into event_to_tag VALUES(?, ?)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmtIns.Close()
-
-	_, err = stmtIns.Exec(eventID, tagID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
 
 func (mc *MySQLClient) SelectEvent(id int) (string, int, string) {
