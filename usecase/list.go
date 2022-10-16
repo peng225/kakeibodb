@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"kakeibodb/db_client"
+	"strings"
 )
 
 type ListHandler struct {
@@ -15,7 +16,18 @@ func NewListHandler(dc db_client.DBClient) *ListHandler {
 	}
 }
 
-func (lh *ListHandler) ListEvent(from, to string) {
+func (lh *ListHandler) ListPaymentEvent(tags, from, to string) {
+	lh.dbClient.Open(db_client.DBName, "shinya")
+	defer lh.dbClient.Close()
+
+	if tags == "" {
+		lh.dbClient.SelectPaymentEvent(from, to)
+	} else {
+		lh.dbClient.SelectPaymentEventWithAllTags(strings.Split(tags, "&"), from, to)
+	}
+}
+
+func (lh *ListHandler) ListAllEvent(tags, from, to string) {
 	lh.dbClient.Open(db_client.DBName, "shinya")
 	defer lh.dbClient.Close()
 

@@ -97,6 +97,93 @@ func (mc *MySQLClient) SelectEvent(id int) (string, int, string) {
 	return date, money, desc
 }
 
+func (mc *MySQLClient) SelectPaymentEvent(from, to string) {
+	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (event.money < 0) group by %s.id order by event.dt;",
+		db_client.EventTableName, db_client.TagTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		from, to,
+		db_client.EventTableName)
+	rows, err := mc.db.Query(queryStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print header
+	for _, column := range columns {
+		fmt.Printf("%s\t", column)
+	}
+	fmt.Println("")
+
+	// Print body
+	for rows.Next() {
+		var id int
+		var date string
+		var money int
+		var desc string
+		var tags *string
+		err := rows.Scan(&id, &date, &money, &desc, &tags)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if tags == nil {
+			tmpTags := "NULL"
+			tags = &tmpTags
+		}
+		fmt.Printf("%v\t%v\t%8d\t%-32s\t%s\n", id, date, money, desc, *tags)
+	}
+}
+
+func (mc *MySQLClient) SelectPaymentEventWithAllTags(tags []string, from, to string) {
+	singleQuotedTags := singleQuoteEachString(tags)
+	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (tag.name in (%s)) and (event.money < 0) group by %s.id order by event.dt;",
+		db_client.EventTableName, db_client.TagTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.MapTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		from, to, strings.Join(singleQuotedTags, ","),
+		db_client.EventTableName)
+	rows, err := mc.db.Query(queryStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print header
+	for _, column := range columns {
+		fmt.Printf("%s\t", column)
+	}
+	fmt.Println("")
+
+	// Print body
+	for rows.Next() {
+		var id int
+		var date string
+		var money int
+		var desc string
+		var tags *string
+		err := rows.Scan(&id, &date, &money, &desc, &tags)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if tags == nil {
+			tmpTags := "NULL"
+			tags = &tmpTags
+		}
+		fmt.Printf("%v\t%v\t%8d\t%-32s\t%s\n", id, date, money, desc, *tags)
+	}
+}
+
 func (mc *MySQLClient) SelectEventAll(from, to string) {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,

@@ -12,6 +12,8 @@ type DBClient interface {
 	InsertTag(name string)
 	InsertMap(eventID, tagID int)
 	SelectEvent(id int) (string, int, string)
+	SelectPaymentEvent(from, to string)
+	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)
 	SelectTagAll() ([]string, []TagEntry)
 	DeleteEvent(id int)
