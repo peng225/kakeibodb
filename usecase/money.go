@@ -3,7 +3,9 @@ package usecase
 import (
 	"fmt"
 	"kakeibodb/db_client"
+	"log"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -48,12 +50,23 @@ func (mh *MoneyHandler) AnalyzeMoney(from, to string) {
 	totalMoney = mh.dbClient.GetMoneySum(from, to)
 	fmt.Printf("total: %d\n", totalMoney)
 
-	_, tagEntries := mh.dbClient.SelectTagAll()
+	_, tagEntries, err := mh.dbClient.Select(db_client.TagTableName, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	mtes := []*MoneyAndTagEntry{}
 	for _, te := range tagEntries {
-		money := mh.dbClient.GetMoneySumForAllTags([]string{te.TagName}, from, to)
-		mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: te})
+		money := mh.dbClient.GetMoneySumForAllTags([]string{te[1]}, from, to)
+
+		id, err := strconv.Atoi(te[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: db_client.TagEntry{
+			ID:      id,
+			TagName: te[1],
+		}})
 	}
 
 	sort.Slice(mtes, func(i, j int) bool { return mtes[i].money > mtes[j].money })

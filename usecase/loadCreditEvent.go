@@ -60,12 +60,21 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 	}
 
 	if !leh.deletingCorrectEvent(relatedBankEventID, creditEvents) {
-		log.Fatal("money mismatch between the deleting event and inserting credit card events.")
+		log.Fatalf("deleting invalid event or event not found. ID = %v", relatedBankEventID)
 	}
 	for _, ce := range creditEvents {
+		shortDesc := string([]rune(ce.description)[0:32])
+		dup, err := leh.hasDuplicateEvent(ce.date, ce.money, shortDesc)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if dup {
+			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", ce.date, ce.money, shortDesc)
+			continue
+		}
 		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, string([]rune(ce.description)[0:32]))
 		var insertData []any = []any{ce.date, ce.money, string([]rune(ce.description)[0:32])}
-		err := leh.dbClient.Insert(db_client.EventTableName, true, insertData)
+		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -81,9 +90,29 @@ func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []c
 	for _, ce := range creditEvents {
 		moneySum += ce.money
 	}
-	data, err := leh.dbClient.SelectByID(db_client.EventTableName, id)
+	tagEntry := db_client.TagEntry{
+		ID: id,
+	}
+	_, entries, err := leh.dbClient.Select(db_client.EventTableName, tagEntry)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return moneySum == data[1].(int)
+	if len(entries) == 0 {
+		return false
+	}
+	money, err := strconv.Atoi(entries[0][1])
+	return moneySum == money
+}
+
+func (leh *LoadCreditEventHandler) hasDuplicateEvent(date string, money int, desc string) (bool, error) {
+	eventEntry := db_client.EventEntry{
+		Date:  date,
+		Money: money,
+		Desc:  desc,
+	}
+	_, data, err := leh.dbClient.Select(db_client.EventTableName, eventEntry)
+	if err != nil {
+		return false, err
+	}
+	return len(data) != 0, nil
 }

@@ -57,8 +57,17 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
-		log.Printf("insert value (%v, %v, %v)\n", date, money, string([]rune(desc)[0:32]))
-		var insertData []any = []any{date, money, string([]rune(desc)[0:32])}
+		shortDesc := string([]rune(desc)[0:32])
+		dup, err := leh.hasDuplicateEvent(date, money, shortDesc)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if dup {
+			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", date, money, shortDesc)
+			continue
+		}
+		log.Printf("insert value (%v, %v, %v)\n", date, money, shortDesc)
+		var insertData []any = []any{date, money, shortDesc}
 		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
 		if err != nil {
 			log.Fatal(err)
@@ -93,4 +102,17 @@ func (leh *LoadEventHandler) LoadEventFromDir(dir string) {
 	for _, file := range files {
 		leh.LoadEventFromFile(file)
 	}
+}
+
+func (leh *LoadEventHandler) hasDuplicateEvent(date string, money int, desc string) (bool, error) {
+	eventEntry := db_client.EventEntry{
+		Date:  date,
+		Money: money,
+		Desc:  desc,
+	}
+	_, data, err := leh.dbClient.Select(db_client.EventTableName, eventEntry)
+	if err != nil {
+		return false, err
+	}
+	return len(data) != 0, nil
 }
