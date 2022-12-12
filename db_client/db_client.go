@@ -18,7 +18,7 @@ type EventToTagEntry struct {
 }
 
 type DBClient interface {
-	Open(dbName string, user string)
+	Open()
 	Close()
 	Insert(table string, withID bool, data []any) error
 	SelectPaymentEvent(from, to string)

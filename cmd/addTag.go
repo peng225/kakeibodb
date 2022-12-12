@@ -37,7 +37,8 @@ to quickly create a Cobra application.`,
 
 		tagNames := strings.Split(tagNamesStr, ",")
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient())
+		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, user))
+		defer eh.Close()
 		eh.AddTag(eventID, tagNames)
 	},
 }

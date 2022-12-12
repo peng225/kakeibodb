@@ -13,15 +13,17 @@ type ListHandler struct {
 }
 
 func NewListHandler(dc db_client.DBClient) *ListHandler {
+	dc.Open()
 	return &ListHandler{
 		dbClient: dc,
 	}
 }
 
-func (lh *ListHandler) ListPaymentEvent(tags, from, to string) {
-	lh.dbClient.Open(db_client.DBName, "shinya")
-	defer lh.dbClient.Close()
+func (lh *ListHandler) Close() {
+	lh.dbClient.Close()
+}
 
+func (lh *ListHandler) ListPaymentEvent(tags, from, to string) {
 	if tags == "" {
 		lh.dbClient.SelectPaymentEvent(from, to)
 	} else {
@@ -30,16 +32,10 @@ func (lh *ListHandler) ListPaymentEvent(tags, from, to string) {
 }
 
 func (lh *ListHandler) ListAllEvent(tags, from, to string) {
-	lh.dbClient.Open(db_client.DBName, "shinya")
-	defer lh.dbClient.Close()
-
 	lh.dbClient.SelectEventAll(from, to)
 }
 
 func (lh *ListHandler) ListTag() {
-	lh.dbClient.Open(db_client.DBName, "shinya")
-	defer lh.dbClient.Close()
-
 	header, tagEntries, err := lh.dbClient.Select(db_client.TagTableName, nil)
 	if err != nil {
 		log.Fatal(err)

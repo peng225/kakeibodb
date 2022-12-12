@@ -43,7 +43,8 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		lh := usecase.NewListHandler(mysql_client.NewMySQLClient())
+		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, user))
+		defer lh.Close()
 		if all {
 			lh.ListAllEvent(tags, from, to)
 		} else {

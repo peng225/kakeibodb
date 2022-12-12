@@ -15,18 +15,23 @@ import (
 )
 
 type MySQLClient struct {
-	db *sql.DB
+	db     *sql.DB
+	dbName string
+	user   string
 }
 
 var _ db_client.DBClient = (*MySQLClient)(nil)
 
-func NewMySQLClient() *MySQLClient {
-	return &MySQLClient{}
+func NewMySQLClient(dbName, user string) *MySQLClient {
+	return &MySQLClient{
+		dbName: dbName,
+		user:   user,
+	}
 }
 
-func (mc *MySQLClient) Open(dbName string, user string) {
+func (mc *MySQLClient) Open() {
 	var err error
-	mc.db, err = sql.Open("mysql", user+"@/"+dbName)
+	mc.db, err = sql.Open("mysql", mc.user+"@/"+mc.dbName)
 	if err != nil {
 		log.Fatal(err)
 	}
