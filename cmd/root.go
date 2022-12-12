@@ -1,16 +1,19 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"kakeibodb/db_client"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-
+var (
+	dbName string
+	user   string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -45,7 +48,6 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVar(&dbName, "dbname", db_client.DBName, "Database name")
+	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "Database user")
 }
-
-

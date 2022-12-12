@@ -43,7 +43,8 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		mh := usecase.NewMoneyHandler(mysql_client.NewMySQLClient())
+		mh := usecase.NewMoneyHandler(mysql_client.NewMySQLClient(dbName, user))
+		defer mh.Close()
 		if analyze {
 			mh.AnalyzeMoney(from, to)
 		} else {

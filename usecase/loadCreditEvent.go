@@ -18,17 +18,19 @@ type creditEvent struct {
 }
 
 func NewLoadCreditEventHandler(dc db_client.DBClient) *LoadCreditEventHandler {
+	dc.Open()
 	return &LoadCreditEventHandler{
 		dbClient: dc,
 	}
 }
 
+func (leh *LoadCreditEventHandler) Close() {
+	leh.dbClient.Close()
+}
+
 func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedBankEventID int) {
 	csv := event.NewCSV()
 	csv.Open(file)
-
-	leh.dbClient.Open(db_client.DBName, "shinya")
-	defer leh.dbClient.Close()
 
 	log.Printf("load from %s\n", file)
 

@@ -10,15 +10,17 @@ type TagHandler struct {
 }
 
 func NewTagHandler(dc db_client.DBClient) *TagHandler {
+	dc.Open()
 	return &TagHandler{
 		dbClient: dc,
 	}
 }
 
-func (th *TagHandler) CreateTag(name string) {
-	th.dbClient.Open(db_client.DBName, "shinya")
-	defer th.dbClient.Close()
+func (th *TagHandler) Close() {
+	th.dbClient.Close()
+}
 
+func (th *TagHandler) CreateTag(name string) {
 	var insertData []any = []any{name}
 	err := th.dbClient.Insert(db_client.TagTableName, true, insertData)
 	if err != nil {
@@ -27,9 +29,6 @@ func (th *TagHandler) CreateTag(name string) {
 }
 
 func (th *TagHandler) DeleteTag(id int) {
-	th.dbClient.Open(db_client.DBName, "shinya")
-	defer th.dbClient.Close()
-
 	tagEntry := db_client.TagEntry{
 		ID: id,
 	}

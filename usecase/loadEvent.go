@@ -15,17 +15,19 @@ type LoadEventHandler struct {
 }
 
 func NewLoadEventHandler(dc db_client.DBClient) *LoadEventHandler {
+	dc.Open()
 	return &LoadEventHandler{
 		dbClient: dc,
 	}
 }
 
+func (leh *LoadEventHandler) Close() {
+	leh.dbClient.Close()
+}
+
 func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 	csv := event.NewCSV()
 	csv.Open(file)
-
-	leh.dbClient.Open(db_client.DBName, "shinya")
-	defer leh.dbClient.Close()
 
 	log.Printf("load from %s\n", file)
 

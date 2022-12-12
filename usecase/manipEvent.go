@@ -12,15 +12,17 @@ type EventHandler struct {
 }
 
 func NewEventHandler(dc db_client.DBClient) *EventHandler {
+	dc.Open()
 	return &EventHandler{
 		dbClient: dc,
 	}
 }
 
-func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
-	eh.dbClient.Open(db_client.DBName, "shinya")
-	defer eh.dbClient.Close()
+func (eh *EventHandler) Close() {
+	eh.dbClient.Close()
+}
 
+func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 	for _, tagName := range tagNames {
 		tagID, err := eh.getTagIDFromName(tagName)
 		if err != nil {
@@ -35,9 +37,6 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 }
 
 func (eh *EventHandler) RemoveTag(eventID int, tagName string) {
-	eh.dbClient.Open(db_client.DBName, "shinya")
-	defer eh.dbClient.Close()
-
 	tagID, err := eh.getTagIDFromName(tagName)
 	if err != nil {
 		log.Fatal(err)

@@ -51,11 +51,13 @@ to quickly create a Cobra application.`,
 			if parentEventID < 0 {
 				log.Fatalf("invalid parentEventID %d\n", parentEventID)
 			}
-			lceh := usecase.NewLoadCreditEventHandler(mysql_client.NewMySQLClient())
+			lceh := usecase.NewLoadCreditEventHandler(mysql_client.NewMySQLClient(dbName, user))
+			defer lceh.Close()
 			lceh.LoadCreditEventFromFile(file, parentEventID)
 
 		} else {
-			leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient())
+			leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient(dbName, user))
+			defer leh.Close()
 			if file != "" {
 				leh.LoadEventFromFile(file)
 			} else {

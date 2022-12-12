@@ -14,15 +14,17 @@ type MoneyHandler struct {
 }
 
 func NewMoneyHandler(dc db_client.DBClient) *MoneyHandler {
+	dc.Open()
 	return &MoneyHandler{
 		dbClient: dc,
 	}
 }
 
-func (mh *MoneyHandler) GetTotalMoney(tags, from, to string) {
-	mh.dbClient.Open(db_client.DBName, "shinya")
-	defer mh.dbClient.Close()
+func (mh *MoneyHandler) Close() {
+	mh.dbClient.Close()
+}
 
+func (mh *MoneyHandler) GetTotalMoney(tags, from, to string) {
 	var money int
 	if tags == "" {
 		money = mh.dbClient.GetMoneySum(from, to)
@@ -43,9 +45,6 @@ type MoneyAndTagEntry struct {
 }
 
 func (mh *MoneyHandler) AnalyzeMoney(from, to string) {
-	mh.dbClient.Open(db_client.DBName, "shinya")
-	defer mh.dbClient.Close()
-
 	var totalMoney int
 	totalMoney = mh.dbClient.GetMoneySum(from, to)
 	fmt.Printf("total: %d\n", totalMoney)
