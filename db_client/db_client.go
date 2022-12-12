@@ -12,6 +12,11 @@ type TagEntry struct {
 	TagName string `colName:"name"`
 }
 
+type EventToTagEntry struct {
+	EventID int `colName:"event_id"`
+	TagID   int `colName:"tag_id"`
+}
+
 type DBClient interface {
 	Open(dbName string, user string)
 	Close()
@@ -20,8 +25,7 @@ type DBClient interface {
 	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)
 	Select(table string, param any) ([]string, [][]string, error)
-	DeleteByID(table string, id int) error
-	DeleteMap(eventID, tagID int)
+	Delete(table string, param any) error
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int
 	GetMoneySumForAnyTags(tags []string, from, to string) int

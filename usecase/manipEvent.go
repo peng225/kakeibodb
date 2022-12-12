@@ -27,7 +27,7 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 			log.Fatal(err)
 		}
 		var insertData []any = []any{eventID, tagID}
-		err = eh.dbClient.Insert(db_client.MapTableName, false, insertData)
+		err = eh.dbClient.Insert(db_client.EventToTagTableName, false, insertData)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -42,7 +42,14 @@ func (eh *EventHandler) RemoveTag(eventID int, tagName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	eh.dbClient.DeleteMap(eventID, tagID)
+	eventToTagEntry := db_client.EventToTagEntry{
+		EventID: eventID,
+		TagID:   tagID,
+	}
+	err = eh.dbClient.Delete(db_client.EventToTagTableName, eventToTagEntry)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (eh *EventHandler) getTagIDFromName(tagName string) (int, error) {

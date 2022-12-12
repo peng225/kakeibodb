@@ -4,4 +4,4 @@ const DBName = "kakeibo"
 
 const EventTableName = "event"
 const TagTableName = "tag"
-const MapTableName = "event_to_tag"
+const EventToTagTableName = "event_to_tag"

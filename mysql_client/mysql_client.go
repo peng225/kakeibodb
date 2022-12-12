@@ -74,9 +74,9 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 func (mc *MySQLClient) SelectPaymentEvent(from, to string) {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (event.money < 0) group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to,
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -118,9 +118,9 @@ func (mc *MySQLClient) SelectPaymentEventWithAllTags(tags []string, from, to str
 	singleQuotedTags := singleQuoteEachString(tags)
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (tag.name in (%s)) and (event.money < 0) group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to, strings.Join(singleQuotedTags, ","),
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -161,9 +161,9 @@ func (mc *MySQLClient) SelectPaymentEventWithAllTags(tags []string, from, to str
 func (mc *MySQLClient) SelectEventAll(from, to string) {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to,
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -276,31 +276,60 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, er
 	return header, entries, nil
 }
 
-func (mc *MySQLClient) DeleteByID(table string, id int) error {
-	stmtIns, err := mc.db.Prepare("delete from " + table + " where id = ?")
-	if err != nil {
-		return err
-	}
-	defer stmtIns.Close()
+func (mc *MySQLClient) Delete(table string, param any) error {
+	queryStr := "delete from " + table
 
-	_, err = stmtIns.Exec(id)
+	if param == nil {
+		return fmt.Errorf("param should not be nil.")
+	}
+	st := reflect.TypeOf(param)
+	sv := reflect.ValueOf(param)
+	firstField := true
+
+	for i := 0; i < st.NumField(); i++ {
+		ft := st.Field(i)
+		fv := sv.Field(i)
+		var valueStr string
+		var ok bool
+		switch fv.Kind() {
+		case reflect.String:
+			valueStr, ok = fv.Interface().(string)
+			if !ok {
+				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+			}
+			if valueStr == "" {
+				continue
+			}
+			valueStr = "'" + valueStr + "'"
+		case reflect.Int:
+			valueInt, ok := fv.Interface().(int)
+			if !ok {
+				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+			}
+			if valueInt == 0 {
+				continue
+			}
+			valueStr = strconv.Itoa(valueInt)
+		}
+		if firstField {
+			queryStr += " where "
+			firstField = false
+		} else {
+			queryStr += " and "
+		}
+		queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
+	}
+
+	if strings.HasSuffix(queryStr, table) {
+		return errors.New("no valid parameter was specified.")
+	}
+
+	_, err := mc.db.Query(queryStr)
 	if err != nil {
 		return err
 	}
+
 	return nil
-}
-
-func (mc *MySQLClient) DeleteMap(eventID, tagID int) {
-	stmtIns, err := mc.db.Prepare("delete from event_to_tag where event_id = ? and tag_id = ?")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmtIns.Close()
-
-	_, err = stmtIns.Exec(eventID, tagID)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func (mc *MySQLClient) GetMoneySum(from, to string) int {
