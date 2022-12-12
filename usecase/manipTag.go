@@ -30,7 +30,10 @@ func (th *TagHandler) DeleteTag(id int) {
 	th.dbClient.Open(db_client.DBName, "shinya")
 	defer th.dbClient.Close()
 
-	err := th.dbClient.DeleteByID(db_client.TagTableName, id)
+	tagEntry := db_client.TagEntry{
+		ID: id,
+	}
+	err := th.dbClient.Delete(db_client.TagTableName, tagEntry)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,6 +3,8 @@ package usecase
 import (
 	"fmt"
 	"kakeibodb/db_client"
+	"log"
+	"strconv"
 	"strings"
 )
 
@@ -38,13 +40,20 @@ func (lh *ListHandler) ListTag() {
 	lh.dbClient.Open(db_client.DBName, "shinya")
 	defer lh.dbClient.Close()
 
-	header, tagEntries := lh.dbClient.SelectTagAll()
+	header, tagEntries, err := lh.dbClient.Select(db_client.TagTableName, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, column := range header {
 		fmt.Printf("%s\t", column)
 	}
 	fmt.Println("")
 
 	for _, te := range tagEntries {
-		fmt.Printf("%2d\t%v\n", te.ID, te.TagName)
+		id, err := strconv.Atoi(te[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%2d\t%v\n", id, te[1])
 	}
 }

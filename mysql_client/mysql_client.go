@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"kakeibodb/db_client"
 	"log"
+	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,32 +71,12 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 	return nil
 }
 
-func (mc *MySQLClient) SelectByID(table string, id int) ([]any, error) {
-	queryStr := fmt.Sprintf("select * from "+table+" where id = %d", id)
-	rows, err := mc.db.Query(queryStr)
-	if err != nil {
-		return nil, err
-	}
-
-	columns, err := rows.Columns()
-	data := make([]any, len(columns))
-
-	if !rows.Next() {
-		return nil, errors.New("rows.Next failed")
-	}
-	err = rows.Scan(data)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
 func (mc *MySQLClient) SelectPaymentEvent(from, to string) {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (event.money < 0) group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to,
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -136,9 +118,9 @@ func (mc *MySQLClient) SelectPaymentEventWithAllTags(tags []string, from, to str
 	singleQuotedTags := singleQuoteEachString(tags)
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (tag.name in (%s)) and (event.money < 0) group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to, strings.Join(singleQuotedTags, ","),
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -179,9 +161,9 @@ func (mc *MySQLClient) SelectPaymentEventWithAllTags(tags []string, from, to str
 func (mc *MySQLClient) SelectEventAll(from, to string) {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') group by %s.id order by event.dt;",
 		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.EventTableName, db_client.MapTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.MapTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.EventTableName, db_client.EventToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
 		from, to,
 		db_client.EventTableName)
 	rows, err := mc.db.Query(queryStr)
@@ -219,67 +201,135 @@ func (mc *MySQLClient) SelectEventAll(from, to string) {
 	}
 }
 
-func (mc *MySQLClient) SelectTagAll() ([]string, []db_client.TagEntry) {
-	rows, err := mc.db.Query(fmt.Sprintf("select * from %s", db_client.TagTableName))
+func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, error) {
+	queryStr := fmt.Sprintf("select * from %s", table)
+
+	if param != nil {
+		st := reflect.TypeOf(param)
+		sv := reflect.ValueOf(param)
+		firstField := true
+		for i := 0; i < st.NumField(); i++ {
+			ft := st.Field(i)
+			fv := sv.Field(i)
+			var valueStr string
+			var ok bool
+			switch fv.Kind() {
+			case reflect.String:
+				valueStr, ok = fv.Interface().(string)
+				if !ok {
+					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+				}
+				if valueStr == "" {
+					continue
+				}
+				valueStr = "'" + valueStr + "'"
+			case reflect.Int:
+				valueInt, ok := fv.Interface().(int)
+				if !ok {
+					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+				}
+				if valueInt == 0 {
+					continue
+				}
+				valueStr = strconv.Itoa(valueInt)
+			}
+			if firstField {
+				queryStr += " where "
+				firstField = false
+			} else {
+				queryStr += " and "
+			}
+			queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
+		}
+	}
+
+	rows, err := mc.db.Query(queryStr)
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	header, err := rows.Columns()
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
-	tagEntries := []db_client.TagEntry{}
+	entries := [][]string{}
 	for rows.Next() {
-		var id int
-		var tagName string
-		err := rows.Scan(&id, &tagName)
-		if err != nil {
-			log.Fatal(err)
+		entry := make([]string, len(header))
+		switch len(entry) {
+		case 2:
+			err = rows.Scan(&entry[0], &entry[1])
+		case 3:
+			err = rows.Scan(&entry[0], &entry[1], &entry[2])
+		case 4:
+			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3])
+		case 5:
+			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3], &entry[4])
+		default:
+			log.Fatalf("Invalid number of columns: %d", len(entry))
 		}
-		tagEntries = append(tagEntries, db_client.TagEntry{ID: id, TagName: tagName})
+		if err != nil {
+			return nil, nil, err
+		}
+		entries = append(entries, entry)
 	}
-	return header, tagEntries
+	return header, entries, nil
 }
 
-func (mc *MySQLClient) DeleteByID(table string, id int) error {
-	stmtIns, err := mc.db.Prepare("delete from " + table + " where id = ?")
-	if err != nil {
-		return err
-	}
-	defer stmtIns.Close()
+func (mc *MySQLClient) Delete(table string, param any) error {
+	queryStr := "delete from " + table
 
-	_, err = stmtIns.Exec(id)
+	if param == nil {
+		return fmt.Errorf("param should not be nil.")
+	}
+	st := reflect.TypeOf(param)
+	sv := reflect.ValueOf(param)
+	firstField := true
+
+	for i := 0; i < st.NumField(); i++ {
+		ft := st.Field(i)
+		fv := sv.Field(i)
+		var valueStr string
+		var ok bool
+		switch fv.Kind() {
+		case reflect.String:
+			valueStr, ok = fv.Interface().(string)
+			if !ok {
+				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+			}
+			if valueStr == "" {
+				continue
+			}
+			valueStr = "'" + valueStr + "'"
+		case reflect.Int:
+			valueInt, ok := fv.Interface().(int)
+			if !ok {
+				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+			}
+			if valueInt == 0 {
+				continue
+			}
+			valueStr = strconv.Itoa(valueInt)
+		}
+		if firstField {
+			queryStr += " where "
+			firstField = false
+		} else {
+			queryStr += " and "
+		}
+		queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
+	}
+
+	if strings.HasSuffix(queryStr, table) {
+		return errors.New("no valid parameter was specified.")
+	}
+
+	_, err := mc.db.Query(queryStr)
 	if err != nil {
 		return err
 	}
+
 	return nil
-}
-
-func (mc *MySQLClient) DeleteMap(eventID, tagID int) {
-	stmtIns, err := mc.db.Prepare("delete from event_to_tag where event_id = ? and tag_id = ?")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmtIns.Close()
-
-	_, err = stmtIns.Exec(eventID, tagID)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (mc *MySQLClient) GetTagIDFromName(tagName string) int {
-	row := mc.db.QueryRow(fmt.Sprintf("select %s.id from %s where %s.name = '%s'",
-		db_client.TagTableName, db_client.TagTableName, db_client.TagTableName, tagName))
-
-	var tagID int
-	err := row.Scan(&tagID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return tagID
 }
 
 func (mc *MySQLClient) GetMoneySum(from, to string) int {
