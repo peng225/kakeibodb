@@ -22,7 +22,6 @@ type DBClient interface {
 	Select(table string, param any) ([]string, [][]string, error)
 	DeleteByID(table string, id int) error
 	DeleteMap(eventID, tagID int)
-	GetTagIDFromName(tagName string) int
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int
 	GetMoneySumForAnyTags(tags []string, from, to string) int

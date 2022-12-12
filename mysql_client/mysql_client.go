@@ -303,18 +303,6 @@ func (mc *MySQLClient) DeleteMap(eventID, tagID int) {
 	}
 }
 
-func (mc *MySQLClient) GetTagIDFromName(tagName string) int {
-	row := mc.db.QueryRow(fmt.Sprintf("select %s.id from %s where %s.name = '%s'",
-		db_client.TagTableName, db_client.TagTableName, db_client.TagTableName, tagName))
-
-	var tagID int
-	err := row.Scan(&tagID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return tagID
-}
-
 func (mc *MySQLClient) GetMoneySum(from, to string) int {
 	row := mc.db.QueryRow(fmt.Sprintf("select -sum(%s.money) from %s where (%s.dt between '%s' and '%s') and (%s.money < 0);",
 		db_client.EventTableName, db_client.EventTableName,
