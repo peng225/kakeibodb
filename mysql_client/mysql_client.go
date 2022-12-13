@@ -31,7 +31,7 @@ func NewMySQLClient(dbName, user string) *MySQLClient {
 
 func (mc *MySQLClient) Open() {
 	var err error
-	mc.db, err = sql.Open("mysql", mc.user+"@/"+mc.dbName)
+	mc.db, err = sql.Open("mysql", mc.user+"@tcp(127.0.0.1:3306)/"+mc.dbName)
 	if err != nil {
 		log.Fatal(err)
 	}
