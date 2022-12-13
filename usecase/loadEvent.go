@@ -59,17 +59,19 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
-		shortDesc := string([]rune(desc)[0:32])
-		dup, err := leh.hasDuplicateEvent(date, money, shortDesc)
+		if len([]rune(desc)) >= 32 {
+			desc = string([]rune(desc)[0:32])
+		}
+		dup, err := leh.hasDuplicateEvent(date, money, desc)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if dup {
-			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", date, money, shortDesc)
+			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", date, money, desc)
 			continue
 		}
-		log.Printf("insert value (%v, %v, %v)\n", date, money, shortDesc)
-		var insertData []any = []any{date, money, shortDesc}
+		log.Printf("insert value (%v, %v, %v)\n", date, money, desc)
+		var insertData []any = []any{date, money, desc}
 		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
 		if err != nil {
 			log.Fatal(err)

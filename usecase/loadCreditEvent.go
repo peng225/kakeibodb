@@ -65,17 +65,19 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 		log.Fatalf("deleting invalid event or event not found. ID = %v", relatedBankEventID)
 	}
 	for _, ce := range creditEvents {
-		shortDesc := string([]rune(ce.description)[0:32])
-		dup, err := leh.hasDuplicateEvent(ce.date, ce.money, shortDesc)
+		if len([]rune(ce.description)) >= 32 {
+			ce.description = string([]rune(ce.description)[0:32])
+		}
+		dup, err := leh.hasDuplicateEvent(ce.date, ce.money, ce.description)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if dup {
-			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", ce.date, ce.money, shortDesc)
+			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", ce.date, ce.money, ce.description)
 			continue
 		}
-		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, string([]rune(ce.description)[0:32]))
-		var insertData []any = []any{ce.date, ce.money, string([]rune(ce.description)[0:32])}
+		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, ce.description)
+		var insertData []any = []any{ce.date, ce.money, ce.description}
 		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
 		if err != nil {
 			log.Fatal(err)
