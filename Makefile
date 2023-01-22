@@ -2,6 +2,7 @@ KAKEIBODB=./kakeibodb
 PASSWORD?=
 GO_FILES:=$(shell find . -type f -name '*.go' -print)
 COMMON_OPTIONS:=--dbname testdb -u test
+COMMON_OPTIONS_WO_USER:=--dbname testdb
 
 $(KAKEIBODB): $(GO_FILES)
 	CGO_ENABLED=0 go build -o $@ -v
@@ -31,6 +32,8 @@ e2e-test: $(KAKEIBODB)
 	$(KAKEIBODB) tag delete -t 1 $(COMMON_OPTIONS)
 	$(KAKEIBODB) event list $(COMMON_OPTIONS)
 	$(KAKEIBODB) tag list $(COMMON_OPTIONS)
+# Set user name by env.
+	KAKEIBODB_USER=test $(KAKEIBODB) event list $(COMMON_OPTIONS_WO_USER)
 
 .PHONY: test-setup
 test-setup:
