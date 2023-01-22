@@ -5,9 +5,14 @@ package cmd
 
 import (
 	"kakeibodb/db_client"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
+)
+
+const (
+	envUser = "KAKEIBODB_USER"
 )
 
 var (
@@ -28,6 +33,14 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if user == "" {
+			user = os.Getenv(envUser)
+			if user == "" {
+				log.Fatal("User name was not specified.")
+			}
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
