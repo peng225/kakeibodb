@@ -27,6 +27,8 @@ e2e-test: $(KAKEIBODB)
 	$(KAKEIBODB) tag create -n foo $(COMMON_OPTIONS)
 	$(KAKEIBODB) tag list $(COMMON_OPTIONS)
 	$(KAKEIBODB) event addTag -e 1 -t foo $(COMMON_OPTIONS)
+# Idempotency check for addTag.
+	$(KAKEIBODB) event addTag -e 1 -t foo $(COMMON_OPTIONS)
 	$(KAKEIBODB) event list $(COMMON_OPTIONS)
 	$(KAKEIBODB) event removeTag -e 1 -t foo $(COMMON_OPTIONS)
 	$(KAKEIBODB) tag delete -t 1 $(COMMON_OPTIONS)
