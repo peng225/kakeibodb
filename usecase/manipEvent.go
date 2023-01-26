@@ -28,6 +28,17 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// Check whether (eventID, tagID) already exists.
+		ettEntry := db_client.EventToTagEntry{
+			EventID: eventID,
+			TagID:   tagID,
+		}
+		_, etts, err := eh.dbClient.Select(db_client.EventToTagTableName, ettEntry)
+		if len(etts) != 0 {
+			return
+		}
+
 		var insertData []any = []any{eventID, tagID}
 		err = eh.dbClient.Insert(db_client.EventToTagTableName, false, insertData)
 		if err != nil {
