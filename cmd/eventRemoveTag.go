@@ -1,6 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -11,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// removeTagCmd represents the removeTag command
-var removeTagCmd = &cobra.Command{
+// eventRemoveTagCmd represents the removeTag command
+var eventRemoveTagCmd = &cobra.Command{
 	Use:   "removeTag",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -41,7 +38,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	eventCmd.AddCommand(removeTagCmd)
+	eventCmd.AddCommand(eventRemoveTagCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -52,6 +49,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	removeTagCmd.Flags().IntP("eventID", "e", 0, "Event ID")
-	removeTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
+	eventRemoveTagCmd.Flags().Int("eventID", 0, "Event ID")
+	eventRemoveTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
 }

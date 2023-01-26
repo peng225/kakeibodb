@@ -31,7 +31,7 @@ func (lh *ListHandler) ListPaymentEvent(tags, from, to string) {
 	}
 }
 
-func (lh *ListHandler) ListAllEvent(tags, from, to string) {
+func (lh *ListHandler) ListAllEvent(from, to string) {
 	lh.dbClient.SelectEventAll(from, to)
 }
 
@@ -52,4 +52,8 @@ func (lh *ListHandler) ListTag() {
 		}
 		fmt.Printf("%2d\t%v\n", id, te[1])
 	}
+}
+
+func (lh *ListHandler) ListAllPattern() {
+	lh.dbClient.SelectPatternAll()
 }

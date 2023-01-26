@@ -17,6 +17,16 @@ type EventToTagEntry struct {
 	TagID   int `colName:"tag_id"`
 }
 
+type PatternEntry struct {
+	ID  int    `colName:"id"`
+	Key string `colName:"key_string"`
+}
+
+type PatternToTagEntry struct {
+	PatternID int `colName:"pattern_id"`
+	TagID     int `colName:"tag_id"`
+}
+
 type DBClient interface {
 	Open()
 	Close()
@@ -29,4 +39,5 @@ type DBClient interface {
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int
 	GetMoneySumForAnyTags(tags []string, from, to string) int
+	SelectPatternAll()
 }
