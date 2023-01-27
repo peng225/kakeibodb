@@ -1,11 +1,11 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package main
 
-import "kakeibodb/cmd"
+import (
+	"kakeibodb/cmd"
+	"log"
+)
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	cmd.Execute()
 }

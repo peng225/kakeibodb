@@ -389,3 +389,43 @@ func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int
 	}
 	return money
 }
+
+func (mc *MySQLClient) SelectPatternAll() {
+	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.pattern_id left outer join %s on %s.id = %s.tag_id group by %s.id;",
+		db_client.PatternTableName, db_client.TagTableName,
+		db_client.PatternTableName, db_client.PatternToTagTableName,
+		db_client.PatternTableName, db_client.PatternToTagTableName,
+		db_client.TagTableName, db_client.TagTableName, db_client.PatternToTagTableName,
+		db_client.PatternTableName)
+	rows, err := mc.db.Query(queryStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print header
+	for _, column := range columns {
+		fmt.Printf("%s\t", column)
+	}
+	fmt.Println("")
+
+	// Print body
+	for rows.Next() {
+		var id int
+		var key string
+		var tags *string
+		err := rows.Scan(&id, &key, &tags)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if tags == nil {
+			tmpTags := "NULL"
+			tags = &tmpTags
+		}
+		fmt.Printf("%v\t%-8s\t%s\n", id, key, *tags)
+	}
+}

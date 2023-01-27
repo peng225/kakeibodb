@@ -1,19 +1,15 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
 	"log"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-// addTagCmd represents the addTag command
-var addTagCmd = &cobra.Command{
+// eventAddTagCmd represents the addTag command
+var eventAddTagCmd = &cobra.Command{
 	Use:   "addTag",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -27,15 +23,13 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		tagNamesStr, err := cmd.Flags().GetString("tagName")
+		tagNames, err := cmd.Flags().GetStringSlice("tagNames")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if eventID == 0 && tagNamesStr == "" {
-			log.Fatal("both eventID and tagName must be specified.")
+		if eventID == 0 && len(tagNames) == 0 {
+			log.Fatal("both eventID and tagNames must be specified.")
 		}
-
-		tagNames := strings.Split(tagNamesStr, ",")
 
 		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, user))
 		defer eh.Close()
@@ -44,7 +38,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	eventCmd.AddCommand(addTagCmd)
+	eventCmd.AddCommand(eventAddTagCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -55,6 +49,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// addTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	addTagCmd.Flags().IntP("eventID", "e", 0, "credit == false: Event ID, credit == true: Credit card event ID")
-	addTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
+	eventAddTagCmd.Flags().Int("eventID", 0, "credit == false: Event ID, credit == true: Credit card event ID")
+	eventAddTagCmd.Flags().StringSlice("tagNames", nil, "Tag Names")
 }

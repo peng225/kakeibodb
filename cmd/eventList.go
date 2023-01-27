@@ -1,6 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -46,7 +43,7 @@ to quickly create a Cobra application.`,
 		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, user))
 		defer lh.Close()
 		if all {
-			lh.ListAllEvent(tags, from, to)
+			lh.ListAllEvent(from, to)
 		} else {
 			lh.ListPaymentEvent(tags, from, to)
 		}

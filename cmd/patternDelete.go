@@ -1,13 +1,15 @@
 package cmd
 
 import (
-	"fmt"
+	"kakeibodb/mysql_client"
+	"kakeibodb/usecase"
+	"log"
 
 	"github.com/spf13/cobra"
 )
 
-// eventDeleteCmd represents the eventDelete command
-var eventDeleteCmd = &cobra.Command{
+// patternDeleteCmd represents the delete command
+var patternDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -17,22 +19,33 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: implement
-		fmt.Println("eventDelete called")
+		patternID, err := cmd.Flags().GetInt("patternID")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if patternID == 0 {
+			log.Fatal("patternID must be specified.")
+		}
+
+		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, user))
+		defer ph.Close()
+		ph.DeletePattern(patternID)
 	},
 }
 
 func init() {
-	eventCmd.AddCommand(eventDeleteCmd)
+	patternCmd.AddCommand(patternDeleteCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// eventDeleteCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// eventDeleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	eventDeleteCmd.Flags().Int("eventID", 0, "Event ID")
+	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	patternDeleteCmd.Flags().Int("patternID", 0, "Pattern ID")
+
+	patternDeleteCmd.MarkFlagRequired("patternID")
 }
