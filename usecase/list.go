@@ -46,11 +46,11 @@ func (lh *ListHandler) ListTag() {
 	fmt.Println("")
 
 	for _, te := range tagEntries {
-		id, err := strconv.Atoi(te[0])
+		id, err := strconv.Atoi(te[db_client.TagColID])
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%2d\t%v\n", id, te[1])
+		fmt.Printf("%2d\t%v\n", id, te[db_client.TagColName])
 	}
 }
 

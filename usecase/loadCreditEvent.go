@@ -107,7 +107,7 @@ func (leh *LoadCreditEventHandler) deletingCorrectEvent(id int, creditEvents []c
 	if len(entries) == 0 {
 		return false
 	}
-	money, err := strconv.Atoi(entries[0][2])
+	money, err := strconv.Atoi(entries[0][db_client.EventColMoney])
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -75,11 +75,11 @@ func (eh *EventHandler) ApplyPattern(from, to string) {
 	}
 	for _, event := range events {
 		for _, pattern := range patterns {
-			key := pattern[1]
-			desc := event[3]
+			key := pattern[db_client.PatternColKey]
+			desc := event[db_client.EventColDescription]
 			if strings.Contains(desc, key) {
 				// Get tagID from tagName.
-				patternID, err := strconv.Atoi(pattern[0])
+				patternID, err := strconv.Atoi(pattern[db_client.PatternColID])
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -93,7 +93,7 @@ func (eh *EventHandler) ApplyPattern(from, to string) {
 				tagNames := make([]string, 0)
 				for _, ptt := range ptts {
 					// Get tagName from tagID.
-					tagID, err := strconv.Atoi(ptt[1])
+					tagID, err := strconv.Atoi(ptt[db_client.PatternToTagColTID])
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -106,10 +106,10 @@ func (eh *EventHandler) ApplyPattern(from, to string) {
 					}
 
 					for _, tag := range tags {
-						tagNames = append(tagNames, tag[1])
+						tagNames = append(tagNames, tag[db_client.TagColName])
 					}
 				}
-				eventID, err := strconv.Atoi(event[0])
+				eventID, err := strconv.Atoi(event[db_client.EventColID])
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -130,7 +130,7 @@ func getTagIDFromName(dbClient db_client.DBClient, tagName string) (int, error) 
 	if len(entries) != 1 {
 		return 0, fmt.Errorf("invalid number of entries. len(entries) = %d, tagName = %s", len(entries), tagName)
 	}
-	tagID, err := strconv.Atoi(entries[0][0])
+	tagID, err := strconv.Atoi(entries[0][db_client.TagColID])
 	if err != nil {
 		return 0, err
 	}

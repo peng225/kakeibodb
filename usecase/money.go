@@ -56,15 +56,16 @@ func (mh *MoneyHandler) AnalyzeMoney(from, to string) {
 
 	mtes := []*MoneyAndTagEntry{}
 	for _, te := range tagEntries {
-		money := mh.dbClient.GetMoneySumForAllTags([]string{te[1]}, from, to)
+		tagName := te[db_client.TagColName]
+		money := mh.dbClient.GetMoneySumForAllTags([]string{tagName}, from, to)
 
-		id, err := strconv.Atoi(te[0])
+		id, err := strconv.Atoi(te[db_client.TagColID])
 		if err != nil {
 			log.Fatal(err)
 		}
 		mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: db_client.TagEntry{
 			ID:      id,
-			TagName: te[1],
+			TagName: tagName,
 		}})
 	}
 

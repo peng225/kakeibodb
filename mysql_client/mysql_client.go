@@ -206,7 +206,7 @@ func (mc *MySQLClient) SelectEventAll(from, to string) {
 	}
 }
 
-func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, error) {
+func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]string, error) {
 	queryStr := fmt.Sprintf("select * from %s", table)
 
 	if param != nil {
@@ -258,23 +258,27 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, er
 		return nil, nil, err
 	}
 
-	entries := [][]string{}
+	entries := make([]map[string]string, 0)
 	for rows.Next() {
-		entry := make([]string, len(header))
-		switch len(entry) {
+		entry := make(map[string]string)
+		scanData := make([]string, len(header))
+		switch len(scanData) {
 		case 2:
-			err = rows.Scan(&entry[0], &entry[1])
+			err = rows.Scan(&scanData[0], &scanData[1])
 		case 3:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2])
 		case 4:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2], &scanData[3])
 		case 5:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3], &entry[4])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2], &scanData[3], &scanData[4])
 		default:
 			log.Fatalf("Invalid number of columns: %d", len(entry))
 		}
 		if err != nil {
 			return nil, nil, err
+		}
+		for i, d := range scanData {
+			entry[header[i]] = d
 		}
 		entries = append(entries, entry)
 	}
