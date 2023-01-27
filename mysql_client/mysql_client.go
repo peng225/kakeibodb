@@ -206,45 +206,55 @@ func (mc *MySQLClient) SelectEventAll(from, to string) {
 	}
 }
 
-func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, error) {
+func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]string, error) {
 	queryStr := fmt.Sprintf("select * from %s", table)
 
 	if param != nil {
-		st := reflect.TypeOf(param)
 		sv := reflect.ValueOf(param)
-		firstField := true
-		for i := 0; i < st.NumField(); i++ {
-			ft := st.Field(i)
-			fv := sv.Field(i)
-			var valueStr string
-			var ok bool
-			switch fv.Kind() {
-			case reflect.String:
-				valueStr, ok = fv.Interface().(string)
-				if !ok {
-					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-				}
-				if valueStr == "" {
-					continue
-				}
-				valueStr = "'" + valueStr + "'"
-			case reflect.Int:
-				valueInt, ok := fv.Interface().(int)
-				if !ok {
-					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-				}
-				if valueInt == 0 {
-					continue
-				}
-				valueStr = strconv.Itoa(valueInt)
+		if sv.Kind() == reflect.String {
+			queryBody, ok := sv.Interface().(string)
+			if !ok {
+				return nil, nil, fmt.Errorf("type conversion failed. sv.Kind = %v", sv.Kind())
 			}
-			if firstField {
-				queryStr += " where "
-				firstField = false
-			} else {
-				queryStr += " and "
+			queryStr += " " + queryBody
+		} else if sv.Kind() == reflect.Struct {
+			st := reflect.TypeOf(param)
+			firstField := true
+			for i := 0; i < sv.NumField(); i++ {
+				fv := sv.Field(i)
+				var valueStr string
+				var ok bool
+				switch fv.Kind() {
+				case reflect.String:
+					valueStr, ok = fv.Interface().(string)
+					if !ok {
+						return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+					}
+					if valueStr == "" {
+						continue
+					}
+					valueStr = "'" + valueStr + "'"
+				case reflect.Int:
+					valueInt, ok := fv.Interface().(int)
+					if !ok {
+						return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+					}
+					if valueInt == 0 {
+						continue
+					}
+					valueStr = strconv.Itoa(valueInt)
+				}
+				if firstField {
+					queryStr += " where "
+					firstField = false
+				} else {
+					queryStr += " and "
+				}
+				ft := st.Field(i)
+				queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
 			}
-			queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
+		} else {
+			return nil, nil, fmt.Errorf("invalid param type. sv.Kind = %v", sv.Kind())
 		}
 	}
 
@@ -258,23 +268,27 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, [][]string, er
 		return nil, nil, err
 	}
 
-	entries := [][]string{}
+	entries := make([]map[string]string, 0)
 	for rows.Next() {
-		entry := make([]string, len(header))
-		switch len(entry) {
+		entry := make(map[string]string)
+		scanData := make([]string, len(header))
+		switch len(scanData) {
 		case 2:
-			err = rows.Scan(&entry[0], &entry[1])
+			err = rows.Scan(&scanData[0], &scanData[1])
 		case 3:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2])
 		case 4:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2], &scanData[3])
 		case 5:
-			err = rows.Scan(&entry[0], &entry[1], &entry[2], &entry[3], &entry[4])
+			err = rows.Scan(&scanData[0], &scanData[1], &scanData[2], &scanData[3], &scanData[4])
 		default:
 			log.Fatalf("Invalid number of columns: %d", len(entry))
 		}
 		if err != nil {
 			return nil, nil, err
+		}
+		for i, d := range scanData {
+			entry[header[i]] = d
 		}
 		entries = append(entries, entry)
 	}
@@ -291,8 +305,7 @@ func (mc *MySQLClient) Delete(table string, param any) error {
 	sv := reflect.ValueOf(param)
 	firstField := true
 
-	for i := 0; i < st.NumField(); i++ {
-		ft := st.Field(i)
+	for i := 0; i < sv.NumField(); i++ {
 		fv := sv.Field(i)
 		var valueStr string
 		var ok bool
@@ -322,6 +335,7 @@ func (mc *MySQLClient) Delete(table string, param any) error {
 		} else {
 			queryStr += " and "
 		}
+		ft := st.Field(i)
 		queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
 	}
 

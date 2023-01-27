@@ -34,7 +34,7 @@ type DBClient interface {
 	SelectPaymentEvent(from, to string)
 	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)
-	Select(table string, param any) ([]string, [][]string, error)
+	Select(table string, param any) ([]string, []map[string]string, error)
 	Delete(table string, param any) error
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int
