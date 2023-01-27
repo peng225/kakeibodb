@@ -64,7 +64,9 @@ func (eh *EventHandler) RemoveTag(eventID int, tagName string) {
 }
 
 func (eh *EventHandler) ApplyPattern(from, to string) {
-	_, events, err := eh.dbClient.Select(db_client.EventTableName, nil)
+	_, events, err := eh.dbClient.Select(db_client.EventTableName,
+		fmt.Sprintf("where %s between '%s' and '%s'",
+			db_client.EventColDate, from, to))
 	if err != nil {
 		log.Fatal(err)
 	}

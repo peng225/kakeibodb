@@ -210,41 +210,51 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]s
 	queryStr := fmt.Sprintf("select * from %s", table)
 
 	if param != nil {
-		st := reflect.TypeOf(param)
 		sv := reflect.ValueOf(param)
-		firstField := true
-		for i := 0; i < st.NumField(); i++ {
-			ft := st.Field(i)
-			fv := sv.Field(i)
-			var valueStr string
-			var ok bool
-			switch fv.Kind() {
-			case reflect.String:
-				valueStr, ok = fv.Interface().(string)
-				if !ok {
-					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-				}
-				if valueStr == "" {
-					continue
-				}
-				valueStr = "'" + valueStr + "'"
-			case reflect.Int:
-				valueInt, ok := fv.Interface().(int)
-				if !ok {
-					return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-				}
-				if valueInt == 0 {
-					continue
-				}
-				valueStr = strconv.Itoa(valueInt)
+		if sv.Kind() == reflect.String {
+			queryBody, ok := sv.Interface().(string)
+			if !ok {
+				return nil, nil, fmt.Errorf("type conversion failed. sv.Kind = %v", sv.Kind())
 			}
-			if firstField {
-				queryStr += " where "
-				firstField = false
-			} else {
-				queryStr += " and "
+			queryStr += " " + queryBody
+		} else if sv.Kind() == reflect.Struct {
+			st := reflect.TypeOf(param)
+			firstField := true
+			for i := 0; i < sv.NumField(); i++ {
+				fv := sv.Field(i)
+				var valueStr string
+				var ok bool
+				switch fv.Kind() {
+				case reflect.String:
+					valueStr, ok = fv.Interface().(string)
+					if !ok {
+						return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+					}
+					if valueStr == "" {
+						continue
+					}
+					valueStr = "'" + valueStr + "'"
+				case reflect.Int:
+					valueInt, ok := fv.Interface().(int)
+					if !ok {
+						return nil, nil, fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
+					}
+					if valueInt == 0 {
+						continue
+					}
+					valueStr = strconv.Itoa(valueInt)
+				}
+				if firstField {
+					queryStr += " where "
+					firstField = false
+				} else {
+					queryStr += " and "
+				}
+				ft := st.Field(i)
+				queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
 			}
-			queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
+		} else {
+			return nil, nil, fmt.Errorf("invalid param type. sv.Kind = %v", sv.Kind())
 		}
 	}
 
@@ -295,8 +305,7 @@ func (mc *MySQLClient) Delete(table string, param any) error {
 	sv := reflect.ValueOf(param)
 	firstField := true
 
-	for i := 0; i < st.NumField(); i++ {
-		ft := st.Field(i)
+	for i := 0; i < sv.NumField(); i++ {
 		fv := sv.Field(i)
 		var valueStr string
 		var ok bool
@@ -326,6 +335,7 @@ func (mc *MySQLClient) Delete(table string, param any) error {
 		} else {
 			queryStr += " and "
 		}
+		ft := st.Field(i)
 		queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
 	}
 
