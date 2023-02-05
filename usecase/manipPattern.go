@@ -52,7 +52,7 @@ func (ph *PatternHandler) AddTag(patternID int, tagNames []string) {
 		}
 		_, ptts, err := ph.dbClient.Select(db_client.PatternToTagTableName, pttEntry)
 		if len(ptts) != 0 {
-			return
+			continue
 		}
 
 		var insertData []any = []any{patternID, tagID}

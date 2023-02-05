@@ -37,7 +37,7 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 		}
 		_, etts, err := eh.dbClient.Select(db_client.EventToTagTableName, ettEntry)
 		if len(etts) != 0 {
-			return
+			continue
 		}
 
 		var insertData []any = []any{eventID, tagID}
