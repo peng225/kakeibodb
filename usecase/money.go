@@ -7,6 +7,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 type MoneyHandler struct {
@@ -47,7 +50,8 @@ type MoneyAndTagEntry struct {
 func (mh *MoneyHandler) AnalyzeMoney(from, to string) {
 	var totalMoney int
 	totalMoney = mh.dbClient.GetMoneySum(from, to)
-	fmt.Printf("total: %d\n", totalMoney)
+	p := message.NewPrinter(language.English)
+	p.Printf("total: %d\n", totalMoney)
 
 	_, tagEntries, err := mh.dbClient.Select(db_client.TagTableName, nil)
 	if err != nil {
@@ -72,7 +76,7 @@ func (mh *MoneyHandler) AnalyzeMoney(from, to string) {
 	sort.Slice(mtes, func(i, j int) bool { return mtes[i].money > mtes[j].money })
 
 	for _, mte := range mtes {
-		fmt.Printf("%-8s:\t%8d (%f%%)\n", mte.tagEntry.TagName, mte.money,
+		p.Printf("%-8s:\t%8d (%f%%)\n", mte.tagEntry.TagName, mte.money,
 			float32(100.0)*float32(mte.money)/float32(totalMoney))
 	}
 }
