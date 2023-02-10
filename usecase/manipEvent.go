@@ -130,7 +130,7 @@ func getTagIDFromName(dbClient db_client.DBClient, tagName string) (int, error) 
 		return 0, err
 	}
 	if len(entries) != 1 {
-		return 0, fmt.Errorf("invalid number of entries. len(entries) = %d, tagName = %s", len(entries), tagName)
+		return 0, fmt.Errorf("tag not found. tagName = %s", tagName)
 	}
 	tagID, err := strconv.Atoi(entries[0][db_client.TagColID])
 	if err != nil {
