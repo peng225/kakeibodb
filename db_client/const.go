@@ -18,3 +18,5 @@ const PatternColID = "id"
 const PatternColKey = "key_string"
 const PatternToTagColPID = "pattern_id"
 const PatternToTagColTID = "tag_id"
+
+const EventDescLength = 32

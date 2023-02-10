@@ -59,8 +59,8 @@ func (leh *LoadEventHandler) LoadEventFromFile(file string) {
 				log.Fatal(err)
 			}
 		}
-		if len([]rune(desc)) >= 32 {
-			desc = string([]rune(desc)[0:32])
+		if len([]rune(desc)) >= db_client.EventDescLength {
+			desc = string([]rune(desc)[0:db_client.EventDescLength])
 		}
 		dup, err := leh.hasDuplicateEvent(date, money, desc)
 		if err != nil {

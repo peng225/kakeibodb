@@ -443,3 +443,29 @@ func (mc *MySQLClient) SelectPatternAll() {
 		fmt.Printf("%v\t%-8s\t%s\n", id, key, *tags)
 	}
 }
+
+func (mc *MySQLClient) Update(table string, cond map[string]string, data map[string]string) error {
+	if len(data) == 0 {
+		return errors.New("empty data.")
+	}
+	queryString := "update " + table + " set "
+	for k, v := range data {
+		queryString += fmt.Sprintf("%s = %s, ", k, v)
+	}
+	queryString = queryString[:len(queryString)-2]
+
+	if len(cond) != 0 {
+		queryString += " where "
+		connector := " and "
+		for k, v := range cond {
+			queryString += fmt.Sprintf("%s = %s%s", k, v, connector)
+		}
+		queryString = queryString[:len(queryString)-len(connector)]
+	}
+
+	_, err := mc.db.Query(queryString)
+	if err != nil {
+		return err
+	}
+	return nil
+}
