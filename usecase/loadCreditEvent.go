@@ -65,8 +65,8 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 		log.Fatalf("deleting invalid event or event not found. ID = %v", relatedBankEventID)
 	}
 	for _, ce := range creditEvents {
-		if len([]rune(ce.description)) >= 32 {
-			ce.description = string([]rune(ce.description)[0:32])
+		if len([]rune(ce.description)) >= db_client.EventDescLength {
+			ce.description = string([]rune(ce.description)[0:db_client.EventDescLength])
 		}
 		dup, err := leh.hasDuplicateEvent(ce.date, ce.money, ce.description)
 		if err != nil {

@@ -58,6 +58,11 @@ e2e-test: $(KAKEIBODB)
 	$(KAKEIBODB) pattern list $(COMMON_OPTIONS)
 	$(KAKEIBODB) pattern delete --patternID 1 $(COMMON_OPTIONS)
 	$(KAKEIBODB) pattern list $(COMMON_OPTIONS)
+# Split test
+	$(KAKEIBODB) event split --eventID 10 --date 2021-12-04 --money -50 --desc "はちみつのど飴" $(COMMON_OPTIONS)
+	$(KAKEIBODB) event split --eventID 10 --date 2021/12/05 --money -50 --desc "きんかんのど飴" $(COMMON_OPTIONS)
+	$(KAKEIBODB) event list $(COMMON_OPTIONS)
+
 
 .PHONY: test-setup
 test-setup:

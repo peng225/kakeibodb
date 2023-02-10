@@ -138,3 +138,39 @@ func getTagIDFromName(dbClient db_client.DBClient, tagName string) (int, error) 
 	}
 	return tagID, nil
 }
+
+func (eh *EventHandler) Split(eventID int, date string, money int, desc string) {
+	eventQuery := db_client.EventEntry{
+		ID: eventID,
+	}
+	_, events, err := eh.dbClient.Select(db_client.EventTableName, eventQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(events) != 1 {
+		log.Fatalf("event not found: eventID = %d", eventID)
+	}
+
+	eventMoneyStr := events[0][db_client.EventColMoney]
+	eventMoney, err := strconv.Atoi(eventMoneyStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if eventMoney > money {
+		log.Fatalf("eventMoney(%d) should be smaller than or equal to money(%d)", eventMoney, money)
+	}
+
+	// Update the existing event.
+	condition := make(map[string]string)
+	condition[db_client.EventColID] = strconv.Itoa(eventID)
+	updateData := make(map[string]string)
+	updateData[db_client.EventColMoney] = strconv.Itoa(eventMoney - money)
+	err = eh.dbClient.Update(db_client.EventTableName, condition, updateData)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Insert a new event.
+	newEventEntry := []any{date, money, desc}
+	eh.dbClient.Insert(db_client.EventTableName, true, newEventEntry)
+}
