@@ -35,15 +35,29 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		analyze, err := cmd.Flags().GetBool("analyze")
+		interval, err := cmd.Flags().GetInt("interval")
+		if err != nil {
+			log.Fatal(err)
+		}
+		window, err := cmd.Flags().GetInt("window")
+		if err != nil {
+			log.Fatal(err)
+		}
+		rank, err := cmd.Flags().GetBool("rank")
+		if err != nil {
+			log.Fatal(err)
+		}
+		ts, err := cmd.Flags().GetBool("ts")
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		mh := usecase.NewMoneyHandler(mysql_client.NewMySQLClient(dbName, user))
 		defer mh.Close()
-		if analyze {
-			mh.AnalyzeMoney(from, to)
+		if rank {
+			mh.Rank(from, to)
+		} else if ts {
+			mh.TimeSeries(from, to, interval, window)
 		} else {
 			mh.GetTotalMoney(tags, from, to)
 		}
@@ -65,5 +79,10 @@ func init() {
 	moneyCmd.Flags().StringP("tags", "", "", `tag list (eg. "foo", "foo&var", "foo|var" etc.)`)
 	moneyCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
 	moneyCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
-	moneyCmd.Flags().BoolP("analyze", "", false, "calculate the ration the amount for all tags")
+	moneyCmd.Flags().IntP("window", "", 3, "time window (month) for time series calculation")
+	moneyCmd.Flags().IntP("interval", "", 1, "interval (month) for time series calculation")
+	moneyCmd.Flags().BoolP("rank", "", false, "calculate the ranking")
+	moneyCmd.Flags().BoolP("ts", "", false, "calculate the time series of the rank")
+
+	moneyCmd.MarkFlagsMutuallyExclusive("rank", "ts")
 }

@@ -39,6 +39,7 @@ type DBClient interface {
 	GetMoneySum(from, to string) int
 	GetMoneySumForAllTags(tags []string, from, to string) int
 	GetMoneySumForAnyTags(tags []string, from, to string) int
+	GetMoneySumWithoutTag(from, to string) int
 	SelectPatternAll()
 	Update(table string, cond map[string]string, data map[string]string) error
 }
