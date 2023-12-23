@@ -404,6 +404,22 @@ func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int
 	return money
 }
 
+func (mc *MySQLClient) GetMoneySumWithoutTag(from, to string) int {
+	queryStr := fmt.Sprintf("select -sum(money) from event left outer join event_to_tag on event.id = event_to_tag.event_id where tag_id is NULL and money < 0 and dt between '%s' and '%s';",
+		from, to)
+	row := mc.db.QueryRow(queryStr)
+
+	var money int
+	err := row.Scan(&money)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Fatal(err)
+		}
+		money = 0
+	}
+	return money
+}
+
 func (mc *MySQLClient) SelectPatternAll() {
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.pattern_id left outer join %s on %s.id = %s.tag_id group by %s.id;",
 		db_client.PatternTableName, db_client.TagTableName,
