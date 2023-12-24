@@ -43,6 +43,10 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		top, err := cmd.Flags().GetInt("top")
+		if err != nil {
+			log.Fatal(err)
+		}
 		rank, err := cmd.Flags().GetBool("rank")
 		if err != nil {
 			log.Fatal(err)
@@ -57,7 +61,7 @@ to quickly create a Cobra application.`,
 		if rank {
 			mh.Rank(from, to)
 		} else if ts {
-			mh.TimeSeries(from, to, interval, window)
+			mh.TimeSeries(from, to, interval, window, top)
 		} else {
 			mh.GetTotalMoney(tags, from, to)
 		}
@@ -81,6 +85,7 @@ func init() {
 	moneyCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
 	moneyCmd.Flags().IntP("window", "", 3, "time window (month) for time series calculation")
 	moneyCmd.Flags().IntP("interval", "", 1, "interval (month) for time series calculation")
+	moneyCmd.Flags().IntP("top", "", 10, "the number of results for time series calculation")
 	moneyCmd.Flags().BoolP("rank", "", false, "calculate the ranking")
 	moneyCmd.Flags().BoolP("ts", "", false, "calculate the time series of the rank")
 

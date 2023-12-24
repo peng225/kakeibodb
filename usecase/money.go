@@ -121,13 +121,21 @@ func validateAnalyzeResult(total int, mtes []*MoneyAndTagEntry) error {
 	return nil
 }
 
-func (mh *MoneyHandler) TimeSeries(from, to string, interval, window int) {
+func (mh *MoneyHandler) TimeSeries(from, to string, interval, window, top int) {
 	layout := "2006-01-02"
 	startTime, err := time.Parse(layout, from)
 	if err != nil {
 		log.Fatal(err)
 	}
 	endTime, err := time.Parse(layout, to)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if top < 1 {
+		log.Fatal(`"top" must be larger than 0`)
+	}
+
+	topIDs, err := mh.getTopIDs(from, to, window, top)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -138,22 +146,48 @@ func (mh *MoneyHandler) TimeSeries(from, to string, interval, window int) {
 		currentFromInTime := currentTime.AddDate(0, -window, 0)
 		currentFrom := fmt.Sprintf("%d-%02d-%02d", currentFromInTime.Year(), currentFromInTime.Month(), currentFromInTime.Day())
 		currentTo := fmt.Sprintf("%d-%02d-%02d", currentTime.Year(), currentTime.Month(), currentTime.Day())
-		_, mtes, err := mh.rank(currentFrom, currentTo, "id")
+		totalMoney, mtes, err := mh.rank(currentFrom, currentTo, "id")
 		if err != nil {
 			log.Fatal(err)
 		}
 		if first {
-			p.Print("date ")
+			p.Print(`"date" "total" `)
 			for _, mte := range mtes {
+				if _, ok := topIDs[mte.tagEntry.ID]; !ok {
+					continue
+				}
 				p.Printf("%q ", mte.tagEntry.TagName)
 			}
 			p.Println("")
 			first = false
 		}
-		p.Printf("%s ", currentTo)
+		p.Printf("%s %d ", currentTo, totalMoney)
 		for _, mte := range mtes {
+			if _, ok := topIDs[mte.tagEntry.ID]; !ok {
+				continue
+			}
 			p.Printf("%d ", mte.money)
 		}
 		p.Println("")
 	}
+}
+
+func (mh *MoneyHandler) getTopIDs(from, to string, window, top int) (map[int]struct{}, error) {
+	layout := "2006-01-02"
+	fromTime, err := time.Parse(layout, from)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fromMinusWindowInTime := fromTime.AddDate(0, -window, 0)
+	fromMinusWindow := fmt.Sprintf("%d-%02d-%02d", fromMinusWindowInTime.Year(), fromMinusWindowInTime.Month(), fromMinusWindowInTime.Day())
+	_, mtes, err := mh.rank(fromMinusWindow, to, "money")
+	if err != nil {
+		return nil, err
+	}
+
+	topIDs := make(map[int]struct{}, 0)
+	for i := 0; i < top; i++ {
+		topIDs[mtes[i].tagEntry.ID] = struct{}{}
+	}
+	return topIDs, nil
 }
