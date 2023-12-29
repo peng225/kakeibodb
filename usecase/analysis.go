@@ -6,41 +6,25 @@ import (
 	"log"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
-type MoneyHandler struct {
+type AnalysisHandler struct {
 	dbClient db_client.DBClient
 }
 
-func NewMoneyHandler(dc db_client.DBClient) *MoneyHandler {
+func NewAnalysisHandler(dc db_client.DBClient) *AnalysisHandler {
 	dc.Open()
-	return &MoneyHandler{
+	return &AnalysisHandler{
 		dbClient: dc,
 	}
 }
 
-func (mh *MoneyHandler) Close() {
-	mh.dbClient.Close()
-}
-
-func (mh *MoneyHandler) GetTotalMoney(tags, from, to string) {
-	var money int
-	if tags == "" {
-		money = mh.dbClient.GetMoneySum(from, to)
-	} else if (!strings.Contains(tags, "&") && !strings.Contains(tags, "|")) ||
-		strings.Contains(tags, "&") {
-		tagTokens := strings.Split(tags, "&")
-		money = mh.dbClient.GetMoneySumForAllTags(tagTokens, from, to)
-	} else {
-		tagTokens := strings.Split(tags, "|")
-		money = mh.dbClient.GetMoneySumForAnyTags(tagTokens, from, to)
-	}
-	fmt.Printf("money: %d\n", money)
+func (ah *AnalysisHandler) Close() {
+	ah.dbClient.Close()
 }
 
 type MoneyAndTagEntry struct {
@@ -48,8 +32,8 @@ type MoneyAndTagEntry struct {
 	tagEntry db_client.TagEntry
 }
 
-func (mh *MoneyHandler) Rank(from, to string) {
-	totalMoney, mtes, err := mh.rank(from, to, "money")
+func (ah *AnalysisHandler) Rank(from, to string) {
+	totalMoney, mtes, err := ah.rank(from, to, "money")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,11 +45,14 @@ func (mh *MoneyHandler) Rank(from, to string) {
 	}
 }
 
-func (mh *MoneyHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry, error) {
+func (ah *AnalysisHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry, error) {
 	var totalMoney int
-	totalMoney = mh.dbClient.GetMoneySum(from, to)
+	totalMoney = ah.dbClient.GetMoneySum(from, to)
+	if totalMoney == 0 {
+		return 0, nil, nil
+	}
 
-	_, tagEntries, err := mh.dbClient.Select(db_client.TagTableName, nil)
+	_, tagEntries, err := ah.dbClient.Select(db_client.TagTableName, nil)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -73,7 +60,7 @@ func (mh *MoneyHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry
 	mtes := []*MoneyAndTagEntry{}
 	for _, te := range tagEntries {
 		tagName := te[db_client.TagColName]
-		money := mh.dbClient.GetMoneySumForAllTags([]string{tagName}, from, to)
+		money := ah.dbClient.GetMoneySumForAllTags([]string{tagName}, from, to)
 
 		id, err := strconv.Atoi(te[db_client.TagColID])
 		if err != nil {
@@ -84,7 +71,7 @@ func (mh *MoneyHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry
 			TagName: tagName,
 		}})
 	}
-	money := mh.dbClient.GetMoneySumWithoutTag(from, to)
+	money := ah.dbClient.GetMoneySumWithoutTag(from, to)
 	mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: db_client.TagEntry{
 		ID:      -1,
 		TagName: "not tagged",
@@ -121,7 +108,7 @@ func validateAnalyzeResult(total int, mtes []*MoneyAndTagEntry) error {
 	return nil
 }
 
-func (mh *MoneyHandler) TimeSeries(from, to string, interval, window, top int) {
+func (ah *AnalysisHandler) TimeSeries(from, to string, interval, window, top int) {
 	layout := "2006-01-02"
 	startTime, err := time.Parse(layout, from)
 	if err != nil {
@@ -135,7 +122,7 @@ func (mh *MoneyHandler) TimeSeries(from, to string, interval, window, top int) {
 		log.Fatal(`"top" must be larger than 0`)
 	}
 
-	topIDs, err := mh.getTopIDs(from, to, window, top)
+	topIDs, err := ah.getTopIDs(from, to, window, top)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,7 +133,7 @@ func (mh *MoneyHandler) TimeSeries(from, to string, interval, window, top int) {
 		currentFromInTime := currentTime.AddDate(0, -window, 0)
 		currentFrom := fmt.Sprintf("%d-%02d-%02d", currentFromInTime.Year(), currentFromInTime.Month(), currentFromInTime.Day())
 		currentTo := fmt.Sprintf("%d-%02d-%02d", currentTime.Year(), currentTime.Month(), currentTime.Day())
-		totalMoney, mtes, err := mh.rank(currentFrom, currentTo, "id")
+		totalMoney, mtes, err := ah.rank(currentFrom, currentTo, "id")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -172,7 +159,7 @@ func (mh *MoneyHandler) TimeSeries(from, to string, interval, window, top int) {
 	}
 }
 
-func (mh *MoneyHandler) getTopIDs(from, to string, window, top int) (map[int]struct{}, error) {
+func (ah *AnalysisHandler) getTopIDs(from, to string, window, top int) (map[int]struct{}, error) {
 	layout := "2006-01-02"
 	fromTime, err := time.Parse(layout, from)
 	if err != nil {
@@ -180,13 +167,13 @@ func (mh *MoneyHandler) getTopIDs(from, to string, window, top int) (map[int]str
 	}
 	fromMinusWindowInTime := fromTime.AddDate(0, -window, 0)
 	fromMinusWindow := fmt.Sprintf("%d-%02d-%02d", fromMinusWindowInTime.Year(), fromMinusWindowInTime.Month(), fromMinusWindowInTime.Day())
-	_, mtes, err := mh.rank(fromMinusWindow, to, "money")
+	_, mtes, err := ah.rank(fromMinusWindow, to, "money")
 	if err != nil {
 		return nil, err
 	}
 
 	topIDs := make(map[int]struct{}, 0)
-	for i := 0; i < top; i++ {
+	for i := 0; i < min(top, len(mtes)); i++ {
 		topIDs[mtes[i].tagEntry.ID] = struct{}{}
 	}
 	return topIDs, nil

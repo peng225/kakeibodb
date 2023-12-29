@@ -360,7 +360,10 @@ func (mc *MySQLClient) GetMoneySum(from, to string) int {
 	var money int
 	err := row.Scan(&money)
 	if err != nil {
-		log.Fatal(err)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Fatal(err)
+		}
+		money = 0
 	}
 	return money
 }
