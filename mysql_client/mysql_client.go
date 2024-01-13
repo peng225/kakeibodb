@@ -49,9 +49,9 @@ func (mc *MySQLClient) Close() {
 	mc.db.Close()
 }
 
-func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
+func (mc *MySQLClient) Insert(table string, withID bool, data []any) (int64, error) {
 	if data == nil || len(data) == 0 {
-		return errors.New("empty data.")
+		return 0, errors.New("empty data.")
 	}
 	queryString := "insert into " + table + " VALUES(?"
 	if withID {
@@ -60,7 +60,7 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 	queryString += strings.Repeat(",?", len(data)-1) + ")"
 	stmtIns, err := mc.db.Prepare(queryString)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer stmtIns.Close()
 
@@ -69,11 +69,16 @@ func (mc *MySQLClient) Insert(table string, withID bool, data []any) error {
 		insertData = append(insertData, 0)
 	}
 	insertData = append(insertData, data...)
-	_, err = stmtIns.Exec(insertData...)
+	result, err := stmtIns.Exec(insertData...)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		// Not all tables have auto-incremented ID column.
+		return 0, nil
+	}
+	return id, nil
 }
 
 func (mc *MySQLClient) SelectPaymentEvent(from, to string) {

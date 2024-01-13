@@ -22,10 +22,11 @@ func (th *PatternHandler) Close() {
 
 func (th *PatternHandler) CreatePattern(key string) {
 	var insertData []any = []any{key}
-	err := th.dbClient.Insert(db_client.PatternTableName, true, insertData)
+	id, err := th.dbClient.Insert(db_client.PatternTableName, true, insertData)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Created a new record with ID %d", id)
 }
 
 func (th *PatternHandler) DeletePattern(id int) {
@@ -56,7 +57,7 @@ func (ph *PatternHandler) AddTag(patternID int, tagNames []string) {
 		}
 
 		var insertData []any = []any{patternID, tagID}
-		err = ph.dbClient.Insert(db_client.PatternToTagTableName, false, insertData)
+		_, err = ph.dbClient.Insert(db_client.PatternToTagTableName, false, insertData)
 		if err != nil {
 			log.Fatal(err)
 		}

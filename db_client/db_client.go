@@ -30,7 +30,7 @@ type PatternToTagEntry struct {
 type DBClient interface {
 	Open()
 	Close()
-	Insert(table string, withID bool, data []any) error
+	Insert(table string, withID bool, data []any) (int64, error)
 	SelectPaymentEvent(from, to string)
 	SelectPaymentEventWithAllTags(tags []string, from, to string)
 	SelectEventAll(from, to string)

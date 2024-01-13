@@ -78,7 +78,7 @@ func (leh *LoadCreditEventHandler) LoadCreditEventFromFile(file string, relatedB
 		}
 		log.Printf("insert value (%v, %v, %v)\n", ce.date, ce.money, ce.description)
 		var insertData []any = []any{ce.date, ce.money, ce.description}
-		err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
+		_, err = leh.dbClient.Insert(db_client.EventTableName, true, insertData)
 		if err != nil {
 			log.Fatal(err)
 		}

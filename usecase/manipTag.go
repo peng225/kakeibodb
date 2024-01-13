@@ -22,7 +22,7 @@ func (th *TagHandler) Close() {
 
 func (th *TagHandler) CreateTag(name string) {
 	var insertData []any = []any{name}
-	err := th.dbClient.Insert(db_client.TagTableName, true, insertData)
+	_, err := th.dbClient.Insert(db_client.TagTableName, true, insertData)
 	if err != nil {
 		log.Fatal(err)
 	}
