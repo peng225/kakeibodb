@@ -41,7 +41,7 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 		}
 
 		var insertData []any = []any{eventID, tagID}
-		err = eh.dbClient.Insert(db_client.EventToTagTableName, false, insertData)
+		_, err = eh.dbClient.Insert(db_client.EventToTagTableName, false, insertData)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -172,5 +172,8 @@ func (eh *EventHandler) Split(eventID int, date string, money int, desc string) 
 
 	// Insert a new event.
 	newEventEntry := []any{date, money, desc}
-	eh.dbClient.Insert(db_client.EventTableName, true, newEventEntry)
+	_, err = eh.dbClient.Insert(db_client.EventTableName, true, newEventEntry)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
