@@ -356,7 +356,24 @@ func (mc *MySQLClient) Delete(table string, param any) error {
 	return nil
 }
 
-func (mc *MySQLClient) GetMoneySum(from, to string) int {
+func (mc *MySQLClient) GetIncomeSum(from, to string) int {
+	row := mc.db.QueryRow(fmt.Sprintf("select sum(%s.money) from %s where (%s.dt between '%s' and '%s') and (%s.money > 0);",
+		db_client.EventTableName, db_client.EventTableName,
+		db_client.EventTableName, from, to,
+		db_client.EventTableName))
+
+	var money int
+	err := row.Scan(&money)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Fatal(err)
+		}
+		money = 0
+	}
+	return money
+}
+
+func (mc *MySQLClient) GetOutcomeSum(from, to string) int {
 	row := mc.db.QueryRow(fmt.Sprintf("select -sum(%s.money) from %s where (%s.dt between '%s' and '%s') and (%s.money < 0);",
 		db_client.EventTableName, db_client.EventTableName,
 		db_client.EventTableName, from, to,
@@ -381,7 +398,7 @@ func singleQuoteEachString(tags []string) []string {
 	return resultTags
 }
 
-func (mc *MySQLClient) GetMoneySumForAllTags(tags []string, from, to string) int {
+func (mc *MySQLClient) GetOutcomeSumForAllTags(tags []string, from, to string) int {
 	singleQuotedTags := singleQuoteEachString(tags)
 	queryStr := fmt.Sprintf("select sum(matched_money.tmp_money) from (select -max(money) as tmp_money from ((event inner join event_to_tag on event.id = event_to_tag.event_id) inner join tag on tag.id = event_to_tag.tag_id) where tag.name in (%s) and event.money < 0 and (event.dt between '%s' and '%s') group by event.id having count(event.id) = %d) as matched_money",
 		strings.Join(singleQuotedTags, ","), from, to, len(tags))
@@ -398,7 +415,7 @@ func (mc *MySQLClient) GetMoneySumForAllTags(tags []string, from, to string) int
 	return money
 }
 
-func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int {
+func (mc *MySQLClient) GetOutcomeSumForAnyTags(tags []string, from, to string) int {
 	singleQuotedTags := singleQuoteEachString(tags)
 	queryStr := fmt.Sprintf("select sum(matched_money.tmp_money) from (select -max(money) as tmp_money from ((event inner join event_to_tag on event.id = event_to_tag.event_id) inner join tag on tag.id = event_to_tag.tag_id) where tag.name in (%s) and event.money < 0 and (event.dt between '%s' and '%s') group by event.id) as matched_money",
 		strings.Join(singleQuotedTags, ","), from, to)
@@ -412,7 +429,7 @@ func (mc *MySQLClient) GetMoneySumForAnyTags(tags []string, from, to string) int
 	return money
 }
 
-func (mc *MySQLClient) GetMoneySumWithoutTag(from, to string) int {
+func (mc *MySQLClient) GetOutcomeSumWithoutTag(from, to string) int {
 	queryStr := fmt.Sprintf("select -sum(money) from event left outer join event_to_tag on event.id = event_to_tag.event_id where tag_id is NULL and money < 0 and dt between '%s' and '%s';",
 		from, to)
 	row := mc.db.QueryRow(queryStr)
