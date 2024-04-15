@@ -33,22 +33,21 @@ type MoneyAndTagEntry struct {
 }
 
 func (ah *AnalysisHandler) Rank(from, to string) {
-	totalMoney, mtes, err := ah.rank(from, to, "money")
+	totalOutcome, mtes, err := ah.rank(from, to, "money")
 	if err != nil {
 		log.Fatal(err)
 	}
 	p := message.NewPrinter(language.English)
-	p.Printf("total: %d\n", totalMoney)
+	p.Printf("total: %d\n", totalOutcome)
 	for _, mte := range mtes {
 		p.Printf("%-8s:\t%8d (%f%%)\n", mte.tagEntry.TagName, mte.money,
-			float32(100.0)*float32(mte.money)/float32(totalMoney))
+			float32(100.0)*float32(mte.money)/float32(totalOutcome))
 	}
 }
 
 func (ah *AnalysisHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry, error) {
-	var totalMoney int
-	totalMoney = ah.dbClient.GetMoneySum(from, to)
-	if totalMoney == 0 {
+	totalOutcome := ah.dbClient.GetOutcomeSum(from, to)
+	if totalOutcome == 0 {
 		return 0, nil, nil
 	}
 
@@ -60,24 +59,24 @@ func (ah *AnalysisHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEn
 	mtes := []*MoneyAndTagEntry{}
 	for _, te := range tagEntries {
 		tagName := te[db_client.TagColName]
-		money := ah.dbClient.GetMoneySumForAllTags([]string{tagName}, from, to)
+		outcome := ah.dbClient.GetOutcomeSumForAllTags([]string{tagName}, from, to)
 
 		id, err := strconv.Atoi(te[db_client.TagColID])
 		if err != nil {
 			return 0, nil, err
 		}
-		mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: db_client.TagEntry{
+		mtes = append(mtes, &MoneyAndTagEntry{money: outcome, tagEntry: db_client.TagEntry{
 			ID:      id,
 			TagName: tagName,
 		}})
 	}
-	money := ah.dbClient.GetMoneySumWithoutTag(from, to)
-	mtes = append(mtes, &MoneyAndTagEntry{money: money, tagEntry: db_client.TagEntry{
+	outcome := ah.dbClient.GetOutcomeSumWithoutTag(from, to)
+	mtes = append(mtes, &MoneyAndTagEntry{money: outcome, tagEntry: db_client.TagEntry{
 		ID:      -1,
 		TagName: "not tagged",
 	}})
 
-	err = validateAnalyzeResult(totalMoney, mtes)
+	err = validateAnalyzeResult(totalOutcome, mtes)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -93,7 +92,7 @@ func (ah *AnalysisHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEn
 	}
 
 	sort.Slice(mtes, mtesSort)
-	return totalMoney, mtes, nil
+	return totalOutcome, mtes, nil
 }
 
 func validateAnalyzeResult(total int, mtes []*MoneyAndTagEntry) error {
@@ -133,12 +132,13 @@ func (ah *AnalysisHandler) TimeSeries(from, to string, interval, window, top int
 		currentFromInTime := currentTime.AddDate(0, -window, 0)
 		currentFrom := fmt.Sprintf("%d-%02d-%02d", currentFromInTime.Year(), currentFromInTime.Month(), currentFromInTime.Day())
 		currentTo := fmt.Sprintf("%d-%02d-%02d", currentTime.Year(), currentTime.Month(), currentTime.Day())
-		totalMoney, mtes, err := ah.rank(currentFrom, currentTo, "id")
+		totalOutcome, mtes, err := ah.rank(currentFrom, currentTo, "id")
 		if err != nil {
 			log.Fatal(err)
 		}
+		totalIncome := ah.dbClient.GetIncomeSum(currentFrom, currentTo)
 		if first {
-			p.Print(`"date" "total" `)
+			p.Print(`"date" "totalIncome" "totalOutcome" `)
 			for _, mte := range mtes {
 				if _, ok := topIDs[mte.tagEntry.ID]; !ok {
 					continue
@@ -148,7 +148,7 @@ func (ah *AnalysisHandler) TimeSeries(from, to string, interval, window, top int
 			p.Println("")
 			first = false
 		}
-		p.Printf("%s %d ", currentTo, totalMoney)
+		p.Printf("%s %d %d ", currentTo, totalIncome, totalOutcome)
 		for _, mte := range mtes {
 			if _, ok := topIDs[mte.tagEntry.ID]; !ok {
 				continue

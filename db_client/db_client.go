@@ -36,10 +36,11 @@ type DBClient interface {
 	SelectEventAll(from, to string)
 	Select(table string, param any) ([]string, []map[string]string, error)
 	Delete(table string, param any) error
-	GetMoneySum(from, to string) int
-	GetMoneySumForAllTags(tags []string, from, to string) int
-	GetMoneySumForAnyTags(tags []string, from, to string) int
-	GetMoneySumWithoutTag(from, to string) int
+	GetIncomeSum(from, to string) int
+	GetOutcomeSum(from, to string) int
+	GetOutcomeSumForAllTags(tags []string, from, to string) int
+	GetOutcomeSumForAnyTags(tags []string, from, to string) int
+	GetOutcomeSumWithoutTag(from, to string) int
 	SelectPatternAll()
 	Update(table string, cond map[string]string, data map[string]string) error
 }
