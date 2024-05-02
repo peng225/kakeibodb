@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -35,9 +37,18 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		lastDays, err := cmd.Flags().GetInt("last")
+		if err != nil {
+			log.Fatal(err)
+		}
 		all, err := cmd.Flags().GetBool("all")
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if lastDays >= 0 {
+			fromDate := time.Now().AddDate(0, 0, -lastDays)
+			from = fmt.Sprintf("%d-%02d-%02d", fromDate.Year(), fromDate.Month(), fromDate.Day())
 		}
 
 		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, user))
@@ -65,5 +76,9 @@ func init() {
 	eventListCmd.Flags().StringP("tags", "", "", `tag list (eg. "foo", "foo&var", "foo|var" etc.)`)
 	eventListCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
 	eventListCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
+	eventListCmd.Flags().IntP("last", "", -1, "show the events of last X days")
 	eventListCmd.Flags().BoolP("all", "a", false, "show all events")
+
+	eventListCmd.MarkFlagsMutuallyExclusive("from", "last")
+	eventListCmd.MarkFlagsMutuallyExclusive("to", "last")
 }
