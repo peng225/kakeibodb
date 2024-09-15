@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"kakeibodb/db_client"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type EventHandler struct {
@@ -137,6 +139,38 @@ func getTagIDFromName(dbClient db_client.DBClient, tagName string) (int, error) 
 		return 0, err
 	}
 	return tagID, nil
+}
+
+func (eh *EventHandler) GetEventIDFromSplitBaseTag(splitBaseTagName string,
+	date string) (int, error) {
+	layout := "2006-01-02"
+	t, err := time.Parse(layout, date)
+	if err != nil {
+		log.Fatal(err)
+	}
+	y, m, d := t.AddDate(0, -2, -5).Date()
+	from := fmt.Sprintf("%d-%02d-%02d", y, m, d)
+	entries, err := eh.dbClient.GetPaymentEventWithAllTags([]string{splitBaseTagName}, from, date)
+	if err != nil {
+		return 0, err
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		layout := "2006-01-02"
+		iTime, err := time.Parse(layout, entries[i]["dt"])
+		if err != nil {
+			log.Fatal(err)
+		}
+		jTime, err := time.Parse(layout, entries[j]["dt"])
+		if err != nil {
+			log.Fatal(err)
+		}
+		return iTime.After(jTime)
+	})
+	entryID, err := strconv.Atoi(entries[0]["id"])
+	if err != nil {
+		return 0, err
+	}
+	return entryID, nil
 }
 
 func (eh *EventHandler) Split(eventID int, date string, money int, desc string) {
