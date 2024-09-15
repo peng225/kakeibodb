@@ -59,10 +59,14 @@ e2e-test: $(KAKEIBODB)
 	$(KAKEIBODB) pattern delete --patternID 1 $(COMMON_OPTIONS)
 	$(KAKEIBODB) pattern list $(COMMON_OPTIONS)
 # Split test
-	$(KAKEIBODB) event split --eventID 10 --date 2021-12-04 --money -50 --desc "はちみつのど飴" $(COMMON_OPTIONS)
-	$(KAKEIBODB) event split --eventID 10 --date 2021/12/05 --money -50 --desc "きんかんのど飴" $(COMMON_OPTIONS)
+	$(KAKEIBODB) tag create -t candy $(COMMON_OPTIONS)
+	$(KAKEIBODB) event addTag --eventID 10 --tagNames "candy" $(COMMON_OPTIONS)
+	$(KAKEIBODB) event split --eventID 10 --date 2021-12-04 --money -30 --desc "はちみつのど飴" $(COMMON_OPTIONS)
+	$(KAKEIBODB) event split --eventID 10 --date 2021/12/05 --money -30 --desc "きんかんのど飴" $(COMMON_OPTIONS)
 	$(KAKEIBODB) event list $(COMMON_OPTIONS)
-
+# Split with auto eventID detection
+	KAKEIBODB_SPLIT_BASE_TAG_NAME="candy" $(KAKEIBODB) event split --date 2021-12-06 --money -40 --desc "ミルク飴" $(COMMON_OPTIONS)
+	$(KAKEIBODB) event list $(COMMON_OPTIONS)
 
 .PHONY: test-setup
 test-setup:

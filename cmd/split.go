@@ -1,14 +1,20 @@
 package cmd
 
 import (
+	"fmt"
 	"kakeibodb/db_client"
 	"kakeibodb/mysql_client"
 	"kakeibodb/usecase"
 	"log"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
 )
+
+const envSplitBaseTagName = "KAKEIBODB_SPLIT_BASE_TAG_NAME"
+
+var splitBaseTagName string
 
 // splitCmd represents the split command
 var splitCmd = &cobra.Command{
@@ -20,10 +26,21 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		splitBaseTagName = os.Getenv(envSplitBaseTagName)
+		if splitBaseTagName != "" {
+			log.Printf("%s: %s\n", envSplitBaseTagName, splitBaseTagName)
+		}
+		// The env can be empty string. That is also OK.
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		eventID, err := cmd.Flags().GetInt("eventID")
 		if err != nil {
 			log.Fatal(err)
+		}
+		if eventID == -1 && splitBaseTagName == "" {
+			log.Fatalf("Either --eventID flag or %s env should be set.",
+				envSplitBaseTagName)
 		}
 		date, err := cmd.Flags().GetString("date")
 		if err != nil {
@@ -54,6 +71,14 @@ to quickly create a Cobra application.`,
 
 		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, user))
 		defer eh.Close()
+
+		if eventID == -1 {
+			eventID, err = eh.GetEventIDFromSplitBaseTag(splitBaseTagName, date)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Auto detected eventID: %d\n", eventID)
+		}
 		eh.Split(eventID, date, money, desc)
 	},
 }
@@ -75,7 +100,6 @@ func init() {
 	splitCmd.Flags().Int("money", -1, "Money of the new event")
 	splitCmd.Flags().String("desc", "", "Description of the new event")
 
-	splitCmd.MarkFlagRequired("eventID")
 	splitCmd.MarkFlagRequired("date")
 	splitCmd.MarkFlagRequired("money")
 	splitCmd.MarkFlagRequired("desc")
