@@ -17,21 +17,24 @@ import (
 type MySQLClient struct {
 	db     *sql.DB
 	dbName string
+	dbPort int
 	user   string
 }
 
 var _ db_client.DBClient = (*MySQLClient)(nil)
 
-func NewMySQLClient(dbName, user string) *MySQLClient {
+func NewMySQLClient(dbName string, dbPort int, user string) *MySQLClient {
 	return &MySQLClient{
 		dbName: dbName,
+		dbPort: dbPort,
 		user:   user,
 	}
 }
 
 func (mc *MySQLClient) Open() {
 	var err error
-	mc.db, err = sql.Open("mysql", mc.user+"@tcp(127.0.0.1:3306)/"+mc.dbName)
+	mc.db, err = sql.Open("mysql", fmt.Sprintf("%s@tcp(127.0.0.1:%d)/%s",
+		mc.user, mc.dbPort, mc.dbName))
 	if err != nil {
 		log.Fatal(err)
 	}

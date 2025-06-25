@@ -32,7 +32,7 @@ to quickly create a Cobra application.`,
 			log.Fatal("both patternID and tagName must be specified.")
 		}
 
-		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, user))
+		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer ph.Close()
 		ph.RemoveTag(patternID, tagName)
 	},

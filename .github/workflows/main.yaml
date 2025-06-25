@@ -20,7 +20,7 @@ jobs:
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:
-          - 3306:3306
+          - 3307:3306
         options: >-
           --health-cmd "mysqladmin ping -h 127.0.0.1"
           --health-interval 10s
@@ -40,5 +40,5 @@ jobs:
 
     - name: Test
       run: |
-        make test-setup
+        make test-setup DBPORT=3307
         make e2e-test

@@ -28,7 +28,7 @@ to quickly create a Cobra application.`,
 			log.Fatal("patternID must be specified.")
 		}
 
-		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, user))
+		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer ph.Close()
 		ph.DeletePattern(patternID)
 	},

@@ -52,7 +52,7 @@ to quickly create a Cobra application.`,
 			from = fmt.Sprintf("%d-%02d-%02d", fromDate.Year(), fromDate.Month(), fromDate.Day())
 		}
 
-		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, user))
+		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer lh.Close()
 		if all {
 			lh.ListAllEvent(from, to)

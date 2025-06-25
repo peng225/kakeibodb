@@ -70,7 +70,7 @@ to quickly create a Cobra application.`,
 			desc = string([]rune(desc)[0:db_client.EventDescLength])
 		}
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, user))
+		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer eh.Close()
 
 		if eventID == -1 {

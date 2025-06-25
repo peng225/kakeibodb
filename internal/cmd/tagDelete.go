@@ -28,7 +28,7 @@ to quickly create a Cobra application.`,
 			log.Fatal("tagID must be specified.")
 		}
 
-		th := usecase.NewTagHandler(mysql_client.NewMySQLClient(dbName, user))
+		th := usecase.NewTagHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer th.Close()
 		th.DeleteTag(tagID)
 	},

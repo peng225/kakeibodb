@@ -29,7 +29,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, user))
+		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		defer eh.Close()
 		eh.ApplyPattern(from, to)
 	},

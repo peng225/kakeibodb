@@ -2,6 +2,7 @@ KAKEIBODB := ./kakeibodb
 GO_FILES := $(shell find . -type f -name '*.go' -print)
 COMMON_OPTIONS := --dbname testdb -u test
 COMMON_OPTIONS_WO_USER := --dbname testdb
+DBPORT := 3306
 
 $(KAKEIBODB): $(GO_FILES)
 	CGO_ENABLED=0 go build -o $@ -v
@@ -69,8 +70,8 @@ e2e-test: $(KAKEIBODB)
 
 .PHONY: test-setup
 test-setup:
-	mysql -h 127.0.0.1 --port 3306 -B -u root < internal/test/setup.sql
+	mysql -h 127.0.0.1 --port $(DBPORT) -B -u root < internal/test/setup.sql
 
 .PHONY: test-clean
 test-clean:
-	mysql -B -u root < internal/test/clean.sql
+	mysql -B -u root --port $(DBPORT) < internal/test/clean.sql

@@ -41,7 +41,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 
-		ah := usecase.NewAnalysisHandler(mysql_client.NewMySQLClient(dbName, user))
+		ah := usecase.NewAnalysisHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
 		ah.TimeSeries(cf.from, cf.to, interval, window, top)
 	},
 }

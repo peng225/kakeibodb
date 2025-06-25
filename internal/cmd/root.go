@@ -14,6 +14,7 @@ const (
 
 var (
 	dbName string
+	dbPort int
 	user   string
 )
 
@@ -59,5 +60,6 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.PersistentFlags().StringVar(&dbName, "dbname", db_client.DBName, "Database name")
+	rootCmd.PersistentFlags().IntVar(&dbPort, "dbport", db_client.DBPort, "Database access port")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "", "Database user")
 }

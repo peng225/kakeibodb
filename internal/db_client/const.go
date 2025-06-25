@@ -1,6 +1,7 @@
 package db_client
 
 const DBName = "kakeibo"
+const DBPort = 3306
 
 const EventTableName = "event"
 const TagTableName = "tag"
