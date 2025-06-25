@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"kakeibodb/mysql_client"
-	"kakeibodb/usecase"
+	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
 )
 
-// patternListCmd represents the list command
-var patternListCmd = &cobra.Command{
+// tagListCmd represents the tagList command
+var tagListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -20,20 +20,20 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, user))
 		defer lh.Close()
-		lh.ListAllPattern()
+		lh.ListTag()
 	},
 }
 
 func init() {
-	patternCmd.AddCommand(patternListCmd)
+	tagCmd.AddCommand(tagListCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// tagListCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// tagListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

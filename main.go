@@ -1,7 +1,7 @@
 package main
 
 import (
-	"kakeibodb/cmd"
+	"kakeibodb/internal/cmd"
 	"log"
 )
 

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"kakeibodb/db_client"
+	"kakeibodb/internal/db_client"
 	"log"
 	"os"
 

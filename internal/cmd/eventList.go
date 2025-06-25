@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"kakeibodb/mysql_client"
-	"kakeibodb/usecase"
 	"log"
 	"strings"
 	"time"
+
+	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
 )

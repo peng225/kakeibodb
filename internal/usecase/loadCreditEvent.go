@@ -1,10 +1,11 @@
 package usecase
 
 import (
-	"kakeibodb/db_client"
-	"kakeibodb/event"
 	"log"
 	"strconv"
+
+	"kakeibodb/internal/db_client"
+	"kakeibodb/internal/event"
 )
 
 type LoadCreditEventHandler struct {

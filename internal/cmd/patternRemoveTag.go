@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"kakeibodb/mysql_client"
-	"kakeibodb/usecase"
 	"log"
+
+	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
 )

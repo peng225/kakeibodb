@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"kakeibodb/db_client"
+	"kakeibodb/internal/db_client"
 	"log"
 	"reflect"
 	"strconv"

@@ -2,11 +2,12 @@ package usecase
 
 import (
 	"fmt"
-	"kakeibodb/db_client"
 	"log"
 	"sort"
 	"strconv"
 	"time"
+
+	"kakeibodb/internal/db_client"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"

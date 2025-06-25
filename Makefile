@@ -18,10 +18,10 @@ clean:
 .PHONY: e2e-test
 e2e-test: $(KAKEIBODB)
 # Load events.
-	$(KAKEIBODB) event load -d test/event $(COMMON_OPTIONS)
+	$(KAKEIBODB) event load -d internal/test/event $(COMMON_OPTIONS)
 	CREDIT_EVENT_ID=$$($(KAKEIBODB) event list  $(COMMON_OPTIONS) | grep "クレジット" | awk '{print $$1}'); \
 	echo $${CREDIT_EVENT_ID}; \
-	$(KAKEIBODB) event load --credit --parentEventID $${CREDIT_EVENT_ID} -f test/credit/cmeisai1.csv $(COMMON_OPTIONS)
+	$(KAKEIBODB) event load --credit --parentEventID $${CREDIT_EVENT_ID} -f internal/test/credit/cmeisai1.csv $(COMMON_OPTIONS)
 	$(KAKEIBODB) event list $(COMMON_OPTIONS)
 # Tag create, add, remove, and delete.
 	$(KAKEIBODB) tag create -t foo $(COMMON_OPTIONS)
@@ -70,8 +70,8 @@ e2e-test: $(KAKEIBODB)
 
 .PHONY: test-setup
 test-setup:
-	mysql -h 127.0.0.1 --port 3306 -B -u root -p$(PASSWORD) < test/setup.sql
+	mysql -h 127.0.0.1 --port 3306 -B -u root -p$(PASSWORD) < internal/test/setup.sql
 
 .PHONY: test-clean
 test-clean:
-	mysql -B -u root -p$(PASSWORD) < test/clean.sql
+	mysql -B -u root -p$(PASSWORD) < internal/test/clean.sql

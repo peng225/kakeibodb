@@ -1,8 +1,9 @@
 package usecase
 
 import (
-	"kakeibodb/db_client"
 	"log"
+
+	"kakeibodb/internal/db_client"
 )
 
 type PatternHandler struct {

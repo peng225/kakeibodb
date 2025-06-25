@@ -2,12 +2,13 @@ package usecase
 
 import (
 	"fmt"
-	"kakeibodb/db_client"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"kakeibodb/internal/db_client"
 )
 
 type EventHandler struct {
