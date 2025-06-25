@@ -40,5 +40,4 @@ jobs:
 
     - name: Test
       run: |
-        make test-setup DBPORT=3307
-        make e2e-test
+        go test -v ./internal/test/...
