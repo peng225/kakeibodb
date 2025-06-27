@@ -1,5 +1,3 @@
-drop user if exists 'test'@'%';
-drop database if exists testdb;
 create database testdb;
 create user 'test'@'%';
 grant all privileges on testdb.* to 'test'@'%';

@@ -41,6 +41,9 @@ func runKakeiboDB(args ...string) ([]byte, []byte, error) {
 //go:embed setup.sql
 var setupSQL []byte
 
+//go:embed cleanup.sql
+var cleanupSQL []byte
+
 func dbSetup(t *testing.T) {
 	t.Helper()
 	_, stderr, err := runCommand(setupSQL, "mysql", "-h", "127.0.0.1",
@@ -48,8 +51,16 @@ func dbSetup(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 }
 
+func dbCleanup(t *testing.T) {
+	t.Helper()
+	_, stderr, err := runCommand(cleanupSQL, "mysql", "-h", "127.0.0.1",
+		"--port", strconv.Itoa(dbPort), "-B", "-u", "root")
+	require.NoError(t, err, string(stderr))
+}
+
 func TestEvent(t *testing.T) {
 	dbSetup(t)
+	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
 	var stdout []byte
@@ -83,6 +94,7 @@ func getEventsWithTags(t *testing.T, tags ...string) []byte {
 
 func TestTag(t *testing.T) {
 	dbSetup(t)
+	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "foo")
@@ -130,6 +142,7 @@ func TestTag(t *testing.T) {
 
 func TestUserEnv(t *testing.T) {
 	dbSetup(t)
+	t.Cleanup(func() { dbCleanup(t) })
 	os.Setenv("KAKEIBODB_USER", "test")
 	t.Cleanup(func() { os.Unsetenv("KAKEIBODB_USER") })
 	completeArgs := append([]string{"event", "list"}, commonOptions[:4]...)
@@ -149,6 +162,7 @@ func getPatternsWithTags(t *testing.T, tags ...string) []byte {
 
 func TestPattern(t *testing.T) {
 	dbSetup(t)
+	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "fruit")
@@ -206,6 +220,7 @@ func TestPattern(t *testing.T) {
 
 func TestSplit(t *testing.T) {
 	dbSetup(t)
+	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
 	var stdout []byte
