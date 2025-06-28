@@ -28,6 +28,16 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 	return q.db.ExecContext(ctx, createEvent, arg.Dt, arg.Money, arg.Description)
 }
 
+const deleteEventByID = `-- name: DeleteEventByID :exec
+DELETE FROM event
+where id = ?
+`
+
+func (q *Queries) DeleteEventByID(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteEventByID, id)
+	return err
+}
+
 const getEvent = `-- name: GetEvent :one
 SELECT id, dt, money, description FROM event
 where dt = ? AND money = ? AND description = ?
@@ -41,6 +51,23 @@ type GetEventParams struct {
 
 func (q *Queries) GetEvent(ctx context.Context, arg GetEventParams) (Event, error) {
 	row := q.db.QueryRowContext(ctx, getEvent, arg.Dt, arg.Money, arg.Description)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.Dt,
+		&i.Money,
+		&i.Description,
+	)
+	return i, err
+}
+
+const getEventByID = `-- name: GetEventByID :one
+SELECT id, dt, money, description FROM event
+where id = ?
+`
+
+func (q *Queries) GetEventByID(ctx context.Context, id int32) (Event, error) {
+	row := q.db.QueryRowContext(ctx, getEventByID, id)
 	var i Event
 	err := row.Scan(
 		&i.ID,

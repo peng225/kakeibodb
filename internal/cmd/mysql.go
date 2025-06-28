@@ -7,7 +7,7 @@ import (
 )
 
 func OpenDB(dbName string, dbPort int, user string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", fmt.Sprintf("%s@tcp(127.0.0.1:%d)/%s",
+	db, err := sql.Open("mysql", fmt.Sprintf("%s@tcp(127.0.0.1:%d)/%s?parseTime=true",
 		user, dbPort, dbName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open DB: %w", err)
