@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	eventDescLength = 32
+)
+
 type Event struct {
 	date  time.Time
 	money int32
@@ -12,8 +16,20 @@ type Event struct {
 	tags  []Tag
 }
 
+func ParseDate(ds string) (*time.Time, error) {
+	layout := "2006/1/2"
+	date, err := time.Parse(layout, ds)
+	if err != nil {
+		return nil, err
+	}
+	return &date, err
+}
+
 func NewEvent(date time.Time, money int32,
 	desc string, tags []Tag) *Event {
+	if len([]rune(desc)) >= eventDescLength {
+		desc = string([]rune(desc)[0:eventDescLength])
+	}
 	return &Event{
 		date:  date,
 		money: money,

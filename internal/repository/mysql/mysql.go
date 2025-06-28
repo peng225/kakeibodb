@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/query/query"
 )
@@ -64,4 +65,22 @@ func (mr *MySQLRepository) Exist(event *model.Event) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (mr *MySQLRepository) Get(id int32) (*model.Event, error) {
+	ctx := context.Background()
+	res, err := mr.q.GetEventByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event by ID: %w", err)
+	}
+	return model.NewEvent(res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
+}
+
+func (mr *MySQLRepository) Delete(id int32) error {
+	ctx := context.Background()
+	err := mr.q.DeleteEventByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete event by ID: %w", err)
+	}
+	return nil
 }
