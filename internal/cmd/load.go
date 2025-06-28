@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -42,6 +43,12 @@ to quickly create a Cobra application.`,
 			log.Fatal("both file and dir cannot be specified.")
 		}
 
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
 		if credit {
 			if file == "" {
 				log.Fatal("file path must be specified for credit mode.")
@@ -54,12 +61,12 @@ to quickly create a Cobra application.`,
 			lceh.LoadCreditEventFromFile(file, parentEventID)
 
 		} else {
-			leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-			defer leh.Close()
+			eventRepo := mysql.NewEventRepository(db)
+			eventUC := usecase.NewEventUseCase(eventRepo)
 			if file != "" {
-				leh.LoadEventFromFile(file)
+				eventUC.LoadFromFile(file)
 			} else {
-				leh.LoadEventFromDir(dir)
+				eventUC.LoadFromDir(dir)
 			}
 
 		}
