@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	_ "embed"
 
@@ -46,9 +47,11 @@ var cleanupSQL []byte
 
 func dbSetup(t *testing.T) {
 	t.Helper()
-	_, stderr, err := runCommand(setupSQL, "mysql", "-h", "127.0.0.1",
-		"--port", strconv.Itoa(dbPort), "-B", "-u", "root")
-	require.NoError(t, err, string(stderr))
+	require.Eventually(t, func() bool {
+		_, _, err := runCommand(setupSQL, "mysql", "-h", "127.0.0.1",
+			"--port", strconv.Itoa(dbPort), "-B", "-u", "root")
+		return err != nil
+	}, 2*time.Second, 100*time.Millisecond)
 }
 
 func dbCleanup(t *testing.T) {
