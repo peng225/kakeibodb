@@ -16,6 +16,15 @@ generate:
 test: $(KAKEIBODB)
 	go test -v ./...
 
+.PHONYE: test-setup
+test-setup:
+	mysql -h 127.0.0.1 --port 3307 -B -u root < internal/test/setup.sql
+
+.PHONYE: test-cleanup
+test-cleanup:
+	mysql -h 127.0.0.1 --port 3307 -B -u root < internal/test/cleanup.sql
+
+
 .PHONY: clean
 clean:
 	rm -f $(KAKEIBODB)
