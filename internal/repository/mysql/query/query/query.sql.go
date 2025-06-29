@@ -29,6 +29,14 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 	return q.db.ExecContext(ctx, createEvent, arg.Dt, arg.Money, arg.Description)
 }
 
+const createTag = `-- name: CreateTag :execresult
+INSERT INTO tag (name) VALUES (?)
+`
+
+func (q *Queries) CreateTag(ctx context.Context, name sql.NullString) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createTag, name)
+}
+
 const deleteEventByID = `-- name: DeleteEventByID :exec
 DELETE FROM event
 WHERE id = ?
@@ -36,6 +44,16 @@ WHERE id = ?
 
 func (q *Queries) DeleteEventByID(ctx context.Context, id int32) error {
 	_, err := q.db.ExecContext(ctx, deleteEventByID, id)
+	return err
+}
+
+const deleteTagByID = `-- name: DeleteTagByID :exec
+DELETE FROM tag
+WHERE id = ?
+`
+
+func (q *Queries) DeleteTagByID(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteTagByID, id)
 	return err
 }
 
@@ -76,6 +94,17 @@ func (q *Queries) GetEventByID(ctx context.Context, id int32) (Event, error) {
 		&i.Money,
 		&i.Description,
 	)
+	return i, err
+}
+
+const getTag = `-- name: GetTag :one
+SELECT id, name FROM tag WHERE name = ?
+`
+
+func (q *Queries) GetTag(ctx context.Context, name sql.NullString) (Tag, error) {
+	row := q.db.QueryRowContext(ctx, getTag, name)
+	var i Tag
+	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
