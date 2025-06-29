@@ -51,3 +51,13 @@ WHERE
   (event.dt BETWEEN ? AND ?) AND
   (tag.name IN (sqlc.slice(tags)))
 ORDER BY event.dt;
+
+-- name: CreateTag :execresult
+INSERT INTO tag (name) VALUES (?);
+
+-- name: GetTag :one
+SELECT * FROM tag WHERE name = ?;
+
+-- name: DeleteTagByID :exec
+DELETE FROM tag
+WHERE id = ?;
