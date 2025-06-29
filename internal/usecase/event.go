@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 type EventRepository interface {
@@ -15,15 +16,35 @@ type EventRepository interface {
 	Exist(event *model.Event) (bool, error)
 	Get(id int32) (*model.Event, error)
 	Delete(id int32) error
+	ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error)
+	ListOutcomesWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
+	List(from, to *time.Time) ([]*model.EventWithID, error)
+	ListWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
+}
+
+type EventPresenter interface {
+	Present(events []*model.EventWithID)
 }
 
 type EventUseCase struct {
 	eventRepo EventRepository
 }
 
+type EventPresentUseCase struct {
+	EventUseCase
+	eventPresenter EventPresenter
+}
+
 func NewEventUseCase(eventRepo EventRepository) *EventUseCase {
 	return &EventUseCase{
 		eventRepo: eventRepo,
+	}
+}
+
+func NewEventPresentUseCase(eventRepo EventRepository, eventPresenter EventPresenter) *EventPresentUseCase {
+	return &EventPresentUseCase{
+		EventUseCase:   *NewEventUseCase(eventRepo),
+		eventPresenter: eventPresenter,
 	}
 }
 
@@ -181,4 +202,40 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEvent *model.Event, creditEv
 	}
 
 	return moneySum == relatedEvent.GetMoney()
+}
+
+func (eu *EventPresentUseCase) PresentOutcomes(tags []model.Tag, from, to *time.Time) {
+	var events []*model.EventWithID
+	var err error
+	if len(tags) == 0 {
+		events, err = eu.eventRepo.ListOutcomes(from, to)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		events, err = eu.eventRepo.ListOutcomesWithTags(tags, from, to)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	eu.eventPresenter.Present(events)
+}
+
+func (eu *EventPresentUseCase) PresentAll(tags []model.Tag, from, to *time.Time) {
+	var events []*model.EventWithID
+	var err error
+	if len(tags) == 0 {
+		events, err = eu.eventRepo.List(from, to)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		events, err = eu.eventRepo.ListWithTags(tags, from, to)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	eu.eventPresenter.Present(events)
 }
