@@ -16,13 +16,25 @@ type Event struct {
 	tags  []Tag
 }
 
+type EventWithID struct {
+	Event
+	id int32
+}
+
 func ParseDate(ds string) (*time.Time, error) {
-	layout := "2006/1/2"
-	date, err := time.Parse(layout, ds)
-	if err != nil {
-		return nil, err
+	layouts := []string{
+		"2006/1/2",
+		"2006/01/02",
+		"2006-01-02",
 	}
-	return &date, err
+	var err error
+	for _, layout := range layouts {
+		date, err := time.Parse(layout, ds)
+		if err == nil {
+			return &date, nil
+		}
+	}
+	return nil, err
 }
 
 func NewEvent(date time.Time, money int32,
@@ -56,10 +68,23 @@ func (e *Event) GetTags() []Tag {
 	return ret
 }
 
-func (e *Event) AddTag(tags []Tag) {
-	for _, tag := range tags {
-		if !slices.Contains(e.tags, tag) {
-			e.tags = append(e.tags, tag)
-		}
+func (e *Event) AddTag(tag Tag) {
+	if !slices.Contains(e.tags, tag) {
+		e.tags = append(e.tags, tag)
 	}
+}
+
+func NewEventWithID(id int32, date time.Time, money int32,
+	desc string, tags []Tag) *EventWithID {
+	if len([]rune(desc)) >= eventDescLength {
+		desc = string([]rune(desc)[0:eventDescLength])
+	}
+	return &EventWithID{
+		id:    id,
+		Event: *NewEvent(date, money, desc, tags),
+	}
+}
+
+func (e *EventWithID) GetID() int32 {
+	return e.id
 }

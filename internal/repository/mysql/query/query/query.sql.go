@@ -8,6 +8,7 @@ package query
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 const createEvent = `-- name: CreateEvent :execresult
@@ -30,7 +31,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 
 const deleteEventByID = `-- name: DeleteEventByID :exec
 DELETE FROM event
-where id = ?
+WHERE id = ?
 `
 
 func (q *Queries) DeleteEventByID(ctx context.Context, id int32) error {
@@ -40,7 +41,7 @@ func (q *Queries) DeleteEventByID(ctx context.Context, id int32) error {
 
 const getEvent = `-- name: GetEvent :one
 SELECT id, dt, money, description FROM event
-where dt = ? AND money = ? AND description = ?
+WHERE dt = ? AND money = ? AND description = ?
 `
 
 type GetEventParams struct {
@@ -63,7 +64,7 @@ func (q *Queries) GetEvent(ctx context.Context, arg GetEventParams) (Event, erro
 
 const getEventByID = `-- name: GetEventByID :one
 SELECT id, dt, money, description FROM event
-where id = ?
+WHERE id = ?
 `
 
 func (q *Queries) GetEventByID(ctx context.Context, id int32) (Event, error) {
@@ -76,4 +77,237 @@ func (q *Queries) GetEventByID(ctx context.Context, id int32) (Event, error) {
 		&i.Description,
 	)
 	return i, err
+}
+
+const listEvents = `-- name: ListEvents :many
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
+LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
+WHERE event.dt BETWEEN ? AND ?
+ORDER BY event.dt
+`
+
+type ListEventsParams struct {
+	FromDt sql.NullTime
+	ToDt   sql.NullTime
+}
+
+type ListEventsRow struct {
+	ID          int32
+	Dt          sql.NullTime
+	Money       sql.NullInt32
+	Description sql.NullString
+	Tags        sql.NullString
+}
+
+func (q *Queries) ListEvents(ctx context.Context, arg ListEventsParams) ([]ListEventsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listEvents, arg.FromDt, arg.ToDt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListEventsRow
+	for rows.Next() {
+		var i ListEventsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dt,
+			&i.Money,
+			&i.Description,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listEventsWithTags = `-- name: ListEventsWithTags :many
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
+LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
+WHERE
+  (event.dt BETWEEN ? AND ?) AND
+  (tag.name IN (/*SLICE:tags*/?))
+ORDER BY event.dt
+`
+
+type ListEventsWithTagsParams struct {
+	FromDt sql.NullTime
+	ToDt   sql.NullTime
+	Tags   []sql.NullString
+}
+
+type ListEventsWithTagsRow struct {
+	ID          int32
+	Dt          sql.NullTime
+	Money       sql.NullInt32
+	Description sql.NullString
+	Tags        sql.NullString
+}
+
+func (q *Queries) ListEventsWithTags(ctx context.Context, arg ListEventsWithTagsParams) ([]ListEventsWithTagsRow, error) {
+	query := listEventsWithTags
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.FromDt)
+	queryParams = append(queryParams, arg.ToDt)
+	if len(arg.Tags) > 0 {
+		for _, v := range arg.Tags {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:tags*/?", strings.Repeat(",?", len(arg.Tags))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:tags*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListEventsWithTagsRow
+	for rows.Next() {
+		var i ListEventsWithTagsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dt,
+			&i.Money,
+			&i.Description,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOutcomeEvents = `-- name: ListOutcomeEvents :many
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
+LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
+WHERE
+  (event.dt BETWEEN ? AND ?) AND
+  (event.money < 0)
+ORDER BY event.dt
+`
+
+type ListOutcomeEventsParams struct {
+	FromDt sql.NullTime
+	ToDt   sql.NullTime
+}
+
+type ListOutcomeEventsRow struct {
+	ID          int32
+	Dt          sql.NullTime
+	Money       sql.NullInt32
+	Description sql.NullString
+	Tags        sql.NullString
+}
+
+func (q *Queries) ListOutcomeEvents(ctx context.Context, arg ListOutcomeEventsParams) ([]ListOutcomeEventsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOutcomeEvents, arg.FromDt, arg.ToDt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOutcomeEventsRow
+	for rows.Next() {
+		var i ListOutcomeEventsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dt,
+			&i.Money,
+			&i.Description,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOutcomeEventsWithTags = `-- name: ListOutcomeEventsWithTags :many
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
+LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
+WHERE
+  (event.dt BETWEEN ? AND ?) AND
+  (tag.name IN (/*SLICE:tags*/?)) AND
+  (event.money < 0)
+ORDER BY event.dt
+`
+
+type ListOutcomeEventsWithTagsParams struct {
+	FromDt sql.NullTime
+	ToDt   sql.NullTime
+	Tags   []sql.NullString
+}
+
+type ListOutcomeEventsWithTagsRow struct {
+	ID          int32
+	Dt          sql.NullTime
+	Money       sql.NullInt32
+	Description sql.NullString
+	Tags        sql.NullString
+}
+
+func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcomeEventsWithTagsParams) ([]ListOutcomeEventsWithTagsRow, error) {
+	query := listOutcomeEventsWithTags
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.FromDt)
+	queryParams = append(queryParams, arg.ToDt)
+	if len(arg.Tags) > 0 {
+		for _, v := range arg.Tags {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:tags*/?", strings.Repeat(",?", len(arg.Tags))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:tags*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOutcomeEventsWithTagsRow
+	for rows.Next() {
+		var i ListOutcomeEventsWithTagsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dt,
+			&i.Money,
+			&i.Description,
+			&i.Tags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
