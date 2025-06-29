@@ -36,11 +36,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if file == "" && dir == "" {
-			log.Fatal("either file or dir must be specified.")
-		} else if file != "" && dir != "" {
-			log.Fatal("both file and dir cannot be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
@@ -86,4 +81,7 @@ func init() {
 	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
 	loadCmd.Flags().BoolP("credit", "", false, "Load credit card event data")
 	loadCmd.Flags().Int32P("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
+
+	loadCmd.MarkFlagsMutuallyExclusive("file", "dir")
+	loadCmd.MarkFlagsOneRequired("file", "dir")
 }
