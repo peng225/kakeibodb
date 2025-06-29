@@ -54,3 +54,16 @@ func (tr *TagRepository) Delete(id int32) error {
 	}
 	return nil
 }
+
+func (tr *TagRepository) List() ([]*model.TagWithID, error) {
+	ctx := context.Background()
+	res, err := tr.q.ListTags(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list tags: %w", err)
+	}
+	tags := make([]*model.TagWithID, len(res))
+	for i, tag := range res {
+		tags[i] = model.NewTagWithID(tag.ID, model.Tag(tag.Name.String))
+	}
+	return tags, nil
+}
