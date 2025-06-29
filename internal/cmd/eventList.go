@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-	"strings"
-	"time"
-
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/model"
+	"kakeibodb/internal/presenter/console"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
+	"log"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -23,18 +22,27 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		tags, err := cmd.Flags().GetString("tags")
+		strTags, err := cmd.Flags().GetStringSlice("tags")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if strings.Contains(tags, "&") && strings.Contains(tags, "|") {
-			log.Fatal(`tags cannot contain both "&" and "|".`)
+		tags := make([]model.Tag, len(strTags))
+		for i, strTag := range strTags {
+			tags[i] = model.Tag(strTag)
 		}
-		from, err := cmd.Flags().GetString("from")
+		fromStr, err := cmd.Flags().GetString("from")
 		if err != nil {
 			log.Fatal(err)
 		}
-		to, err := cmd.Flags().GetString("to")
+		from, err := model.ParseDate(fromStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		toStr, err := cmd.Flags().GetString("to")
+		if err != nil {
+			log.Fatal(err)
+		}
+		to, err := model.ParseDate(toStr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -48,16 +56,22 @@ to quickly create a Cobra application.`,
 		}
 
 		if lastDays >= 0 {
-			fromDate := time.Now().AddDate(0, 0, -lastDays)
-			from = fmt.Sprintf("%d-%02d-%02d", fromDate.Year(), fromDate.Month(), fromDate.Day())
+			tmpFrom := time.Now().AddDate(0, 0, -lastDays)
+			from = &tmpFrom
 		}
 
-		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer lh.Close()
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		eventRepo := mysql.NewEventRepository(db)
+		eventPresenter := console.NewEventPresenter()
+		eventPresentUC := usecase.NewEventPresentUseCase(eventRepo, eventPresenter)
 		if all {
-			lh.ListAllEvent(from, to)
+			eventPresentUC.PresentAll(tags, from, to)
 		} else {
-			lh.ListPaymentEvent(tags, from, to)
+			eventPresentUC.PresentOutcomes(tags, from, to)
 		}
 	},
 }
@@ -74,10 +88,10 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// eventListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	eventListCmd.Flags().StringP("tags", "", "", `tag list (eg. "foo", "foo&var", "foo|var" etc.)`)
-	eventListCmd.Flags().StringP("from", "", "2018-01-01", "the beginning of time range")
-	eventListCmd.Flags().StringP("to", "", "2100-12-31", "the end of time range")
-	eventListCmd.Flags().IntP("last", "", -1, "show the events of last X days")
+	eventListCmd.Flags().StringSlice("tags", nil, `tag list (eg. "foo", "foo,var" etc.)`)
+	eventListCmd.Flags().String("from", "2018-01-01", "the beginning of time range")
+	eventListCmd.Flags().String("to", "2100-12-31", "the end of time range")
+	eventListCmd.Flags().Int("last", -1, "show the events of last X days")
 	eventListCmd.Flags().BoolP("all", "a", false, "show all events")
 
 	eventListCmd.MarkFlagsMutuallyExclusive("from", "last")

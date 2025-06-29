@@ -3,7 +3,8 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/model"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -28,9 +29,14 @@ to quickly create a Cobra application.`,
 			log.Fatal("tag name must be specified.")
 		}
 
-		th := usecase.NewTagHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer th.Close()
-		th.CreateTag(tagName)
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		tagRepo := mysql.NewTagRepository(db)
+		tagUC := usecase.NewTagUseCase(tagRepo)
+		tagUC.Create(model.Tag(tagName))
 	},
 }
 
