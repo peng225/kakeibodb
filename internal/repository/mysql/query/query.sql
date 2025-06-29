@@ -61,3 +61,7 @@ SELECT * FROM tag WHERE name = ?;
 -- name: DeleteTagByID :exec
 DELETE FROM tag
 WHERE id = ?;
+
+-- name: ListTags :many
+SELECT * FROM tag
+ORDER BY tag.id;
