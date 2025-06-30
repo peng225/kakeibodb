@@ -105,6 +105,10 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 	events := make([]*model.EventWithID, 0)
 	for _, ewt := range res {
 		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		if !ewt.Tags.Valid {
+			events = append(events, e)
+			continue
+		}
 		tag := model.Tag(ewt.Tags.String)
 		if len(events) == 0 {
 			e.AddTag(tag)
