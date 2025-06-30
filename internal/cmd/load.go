@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -32,15 +32,18 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		parentEventID, err := cmd.Flags().GetInt("parentEventID")
+		parentEventID, err := cmd.Flags().GetInt32("parentEventID")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if file == "" && dir == "" {
-			log.Fatal("either file or dir must be specified.")
-		} else if file != "" && dir != "" {
-			log.Fatal("both file and dir cannot be specified.")
+
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
 		}
+		defer db.Close()
+		eventRepo := mysql.NewEventRepository(db)
+		eventUC := usecase.NewEventUseCase(eventRepo)
 
 		if credit {
 			if file == "" {
@@ -49,17 +52,13 @@ to quickly create a Cobra application.`,
 			if parentEventID < 0 {
 				log.Fatalf("invalid parentEventID %d\n", parentEventID)
 			}
-			lceh := usecase.NewLoadCreditEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-			defer lceh.Close()
-			lceh.LoadCreditEventFromFile(file, parentEventID)
+			eventUC.LoadCreditFromFile(file, parentEventID)
 
 		} else {
-			leh := usecase.NewLoadEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-			defer leh.Close()
 			if file != "" {
-				leh.LoadEventFromFile(file)
+				eventUC.LoadFromFile(file)
 			} else {
-				leh.LoadEventFromDir(dir)
+				eventUC.LoadFromDir(dir)
 			}
 
 		}
@@ -81,5 +80,8 @@ func init() {
 	loadCmd.Flags().StringP("file", "f", "", "Input file path")
 	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
 	loadCmd.Flags().BoolP("credit", "", false, "Load credit card event data")
-	loadCmd.Flags().IntP("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
+	loadCmd.Flags().Int32P("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
+
+	loadCmd.MarkFlagsMutuallyExclusive("file", "dir")
+	loadCmd.MarkFlagsOneRequired("file", "dir")
 }

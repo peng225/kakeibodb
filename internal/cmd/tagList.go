@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/presenter/console"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -18,9 +20,15 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		lh := usecase.NewListHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer lh.Close()
-		lh.ListTag()
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		tagRepo := mysql.NewTagRepository(db)
+		tagPresenter := console.NewTagPresenter()
+		tagUC := usecase.NewTagPresentUseCase(tagRepo, tagPresenter)
+		tagUC.List()
 	},
 }
 
