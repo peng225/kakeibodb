@@ -1,9 +1,9 @@
 package test
 
 import (
-	"bytes"
+	"kakeibodb/internal/model"
 	"os"
-	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,31 +13,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
-
-const (
-	kakeibodb = "../../kakeibodb"
-	dbPort    = 3307
-)
-
-var commonOptions = []string{"--dbname", "testdb",
-	"--dbport", strconv.Itoa(dbPort), "-u", "test"}
-
-func runCommand(stdin []byte, cmd string, args ...string) ([]byte, []byte, error) {
-	c := exec.Command(cmd, args...)
-	c.Stdin = bytes.NewReader(stdin)
-
-	var stdoutBuf, stderrBuf bytes.Buffer
-	c.Stdout = &stdoutBuf
-	c.Stderr = &stderrBuf
-	err := c.Run()
-
-	return stdoutBuf.Bytes(), stderrBuf.Bytes(), err
-}
-
-func runKakeiboDB(args ...string) ([]byte, []byte, error) {
-	completeArgs := append(args, commonOptions...)
-	return runCommand(nil, kakeibodb, completeArgs...)
-}
 
 //go:embed setup.sql
 var setupSQL []byte
@@ -69,30 +44,48 @@ func TestEvent(t *testing.T) {
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "grep", "クレジット")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{print $1}")
-	require.NoError(t, err, string(stderr))
-	creditEventID := strings.TrimSpace(string(stdout))
+	events := parseEventList(t, stdout)
+	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+		return e.GetDesc() == "クレジットカード"
+	})
+	require.NotEqual(t, -1, i)
+	creditEventID := strconv.FormatInt(int64(events[i].GetID()), 10)
+
 	_, stderr, err = runKakeiboDB("event", "load", "--credit",
 		"--parentEventID", creditEventID, "-f", "credit/cmeisai1.csv")
 	require.NoError(t, err, string(stderr))
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	_, _, err = runCommand(stdout, "grep", "クレジット")
-	require.Error(t, err)
-	_, stderr, err = runCommand(stdout, "grep", "チョコ")
-	require.NoError(t, err, string(stderr))
+	events = parseEventList(t, stdout)
+	i = slices.IndexFunc(events, func(e *model.EventWithID) bool {
+		return e.GetDesc() == "クレジットカード"
+	})
+	require.Equal(t, -1, i)
+	i = slices.IndexFunc(events, func(e *model.EventWithID) bool {
+		return e.GetDesc() == "チョコ"
+	})
+	require.NotEqual(t, -1, i)
 }
 
-func getEventsWithTags(t *testing.T, tags ...string) []byte {
+func getEventsWithAllTags(t *testing.T, tags ...string) []*model.EventWithID {
 	stdout, stderr, err := runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	for _, tag := range tags {
-		stdout, stderr, err = runCommand(stdout, "grep", tag)
-		require.NoError(t, err, string(stderr))
+	events := parseEventList(t, stdout)
+	seq := func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			for _, tag := range e.GetTags() {
+				if !slices.ContainsFunc(tags, func(t string) bool {
+					return t == tag.String()
+				}) {
+					return
+				}
+			}
+			if !yield(e) {
+				return
+			}
+		}
 	}
-	return stdout
+	return slices.Collect(seq)
 }
 
 func TestTag(t *testing.T) {
@@ -116,11 +109,9 @@ func TestTag(t *testing.T) {
 	// Idempotency check.
 	_, stderr, err = runKakeiboDB("event", "addTag", "--eventID", "1", "--tagNames", "foo,bar")
 	require.NoError(t, err, string(stderr))
-	stdout = getEventsWithTags(t, "foo", "bar")
-	stdout, stderr, err = runCommand(stdout, "awk", "{print $1}")
-	require.NoError(t, err, string(stderr))
-	eventID := strings.TrimSpace(string(stdout))
-	require.Equal(t, "1", eventID)
+	eventsWithAllTags := getEventsWithAllTags(t, "foo", "bar")
+	require.Len(t, eventsWithAllTags, 1)
+	require.Equal(t, int32(1), eventsWithAllTags[0].GetID())
 
 	// Remove tags from a event.
 	_, stderr, err = runKakeiboDB("event", "removeTag", "--eventID", "1", "-t", "foo")
@@ -129,8 +120,16 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	_, _, err = runCommand(stdout, "grep", "-e", "foo", "-e", "bar")
-	require.Error(t, err)
+	events := parseEventList(t, stdout)
+	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+		for _, tag := range e.GetTags() {
+			if tag.String() == "foo" || tag.String() == "bar" {
+				return true
+			}
+		}
+		return false
+	})
+	require.Equal(t, -1, i)
 
 	// Delete tags.
 	_, stderr, err = runKakeiboDB("tag", "delete", "--tagID", "1")
@@ -198,9 +197,10 @@ func TestPattern(t *testing.T) {
 	_, stderr, err = runKakeiboDB("event", "applyPattern",
 		"--from", "2022-01-04", "--to", "2022-02-03")
 	require.NoError(t, err, string(stderr))
-	stdout = getEventsWithTags(t, "fruit", "yellow")
-	_, stderr, err = runCommand(stdout, "grep", "バナ")
-	require.NoError(t, err, string(stderr))
+	eventsWithAllTags := getEventsWithAllTags(t, "fruit", "yellow")
+	for _, ewt := range eventsWithAllTags {
+		require.Contains(t, ewt.GetDesc(), "バナ")
+	}
 
 	// Remove tags from a pattern.
 	_, stderr, err = runKakeiboDB("pattern", "removeTag",
@@ -229,11 +229,12 @@ func TestSplit(t *testing.T) {
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "grep", "クレジット")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{print $1}")
-	require.NoError(t, err, string(stderr))
-	creditEventID := strings.TrimSpace(string(stdout))
+	events := parseEventList(t, stdout)
+	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+		return e.GetDesc() == "クレジットカード"
+	})
+	require.NotEqual(t, -1, i)
+	creditEventID := strconv.FormatInt(int64(events[i].GetID()), 10)
 	_, stderr, err = runKakeiboDB("event", "load", "--credit",
 		"--parentEventID", creditEventID, "-f", "credit/cmeisai1.csv")
 	require.NoError(t, err, string(stderr))
@@ -244,12 +245,17 @@ func TestSplit(t *testing.T) {
 
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "grep", "飴")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{print $3}")
-	require.NoError(t, err, string(stderr))
-	beforeCandyMoney, err := strconv.Atoi(strings.TrimSpace(string(stdout)))
-	require.NoError(t, err)
+	events = parseEventList(t, stdout)
+	seq := func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
+				return
+			}
+		}
+	}
+	candyEvents := slices.Collect(seq)
+	require.Len(t, candyEvents, 1)
+	beforeCandyMoney := candyEvents[0].GetMoney()
 
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "10",
@@ -261,12 +267,20 @@ func TestSplit(t *testing.T) {
 
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "grep", "飴")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{s += $3} END {print s}")
-	require.NoError(t, err, string(stderr))
-	afterCandyMoneySum, err := strconv.Atoi(strings.TrimSpace(string(stdout)))
-	require.NoError(t, err)
+	events = parseEventList(t, stdout)
+	seq = func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
+				return
+			}
+		}
+	}
+	candyEvents = slices.Collect(seq)
+	require.Len(t, candyEvents, 3)
+	afterCandyMoneySum := int32(0)
+	for _, e := range candyEvents {
+		afterCandyMoneySum += e.GetMoney()
+	}
 	require.Equal(t, beforeCandyMoney, afterCandyMoneySum)
 
 	os.Setenv("KAKEIBODB_SPLIT_BASE_TAG_NAME", "candy")
@@ -276,11 +290,20 @@ func TestSplit(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "grep", "飴")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{s += $3} END {print s}")
-	require.NoError(t, err, string(stderr))
-	afterCandyMoneySum, err = strconv.Atoi(strings.TrimSpace(string(stdout)))
-	require.NoError(t, err)
+	events = parseEventList(t, stdout)
+	seq = func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
+				return
+			}
+		}
+	}
+	// The original candy event must deleted because its remaining money is 0.
+	candyEvents = slices.Collect(seq)
+	require.Len(t, candyEvents, 3)
+	afterCandyMoneySum = int32(0)
+	for _, e := range candyEvents {
+		afterCandyMoneySum += e.GetMoney()
+	}
 	require.Equal(t, beforeCandyMoney, afterCandyMoneySum)
 }
