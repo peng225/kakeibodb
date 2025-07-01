@@ -53,3 +53,25 @@ func parseTagList(t *testing.T, rawTagList []byte) []*model.TagWithID {
 	}
 	return tags
 }
+
+func parsePatternList(t *testing.T, rawPatternList []byte) []*model.PatternWithID {
+	t.Helper()
+	strPatternLines := strings.Split(strings.TrimSpace(string(rawPatternList)), "\n")
+	require.LessOrEqual(t, 1, len(strPatternLines))
+	// Skip header
+	strPatternLines = strPatternLines[1:]
+	patterns := make([]*model.PatternWithID, len(strPatternLines))
+	for i, strPatternLine := range strPatternLines {
+		strPattern := strings.Fields(strPatternLine)
+		require.Len(t, strPattern, 3, strPatternLine)
+		id, err := strconv.ParseInt(strPattern[0], 10, 32)
+		require.NoError(t, err)
+		patterns[i] = model.NewPatternWithID(
+			int32(id), strPattern[1], nil,
+		)
+		for _, tag := range strings.Split(strPattern[2], ",") {
+			patterns[i].AddTag(model.Tag(tag))
+		}
+	}
+	return patterns
+}

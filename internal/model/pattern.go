@@ -7,6 +7,11 @@ type Pattern struct {
 	tags []Tag
 }
 
+type PatternWithID struct {
+	Pattern
+	id int32
+}
+
 func NewPattern(key string, tags []Tag) *Pattern {
 	return &Pattern{
 		key:  key,
@@ -14,10 +19,29 @@ func NewPattern(key string, tags []Tag) *Pattern {
 	}
 }
 
-func (p *Pattern) AddTag(tags []Tag) {
-	for _, tag := range tags {
-		if !slices.Contains(p.tags, tag) {
-			p.tags = append(p.tags, tag)
-		}
+func (p *Pattern) GetKey() string {
+	return p.key
+}
+
+func (p *Pattern) GetTags() []Tag {
+	ret := make([]Tag, len(p.tags))
+	copy(ret, p.tags)
+	return ret
+}
+
+func (p *Pattern) AddTag(tag Tag) {
+	if !slices.Contains(p.tags, tag) {
+		p.tags = append(p.tags, tag)
 	}
+}
+
+func NewPatternWithID(id int32, key string, tags []Tag) *PatternWithID {
+	return &PatternWithID{
+		Pattern: *NewPattern(key, tags),
+		id:      id,
+	}
+}
+
+func (p *PatternWithID) GetID() int32 {
+	return p.id
 }

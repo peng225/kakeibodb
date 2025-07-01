@@ -389,7 +389,7 @@ func (mc *MySQLClient) SelectPatternAll() {
 			tmpTags := "NULL"
 			tags = &tmpTags
 		}
-		fmt.Printf("%v\t%-8s\t%s\n", id, key, *tags)
+		fmt.Printf("%v\t%-8s\t%s\n", id, key, strings.ReplaceAll(*tags, " ", ""))
 	}
 }
 

@@ -151,14 +151,25 @@ func TestUserEnv(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 }
 
-func getPatternsWithTags(t *testing.T, tags ...string) []byte {
+func getPatternsWithAllTags(t *testing.T, tags ...string) []*model.PatternWithID {
 	stdout, stderr, err := runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
-	for _, tag := range tags {
-		stdout, stderr, err = runCommand(stdout, "grep", tag)
-		require.NoError(t, err, string(stderr))
+	patterns := parsePatternList(t, stdout)
+	seq := func(yield func(*model.PatternWithID) bool) {
+		for _, p := range patterns {
+			for _, tag := range p.GetTags() {
+				if !slices.ContainsFunc(tags, func(t string) bool {
+					return t == tag.String()
+				}) {
+					return
+				}
+			}
+			if !yield(p) {
+				return
+			}
+		}
 	}
-	return stdout
+	return slices.Collect(seq)
 }
 
 func TestPattern(t *testing.T) {
@@ -180,14 +191,10 @@ func TestPattern(t *testing.T) {
 	_, stderr, err = runKakeiboDB("pattern", "addTag", "--patternID", "1",
 		"--tagNames", "fruit,yellow")
 	require.NoError(t, err, string(stderr))
-	var stdout []byte
-	stdout = getPatternsWithTags(t, "fruit", "yellow")
-	stdout, stderr, err = runCommand(stdout, "grep", "バナ")
-	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runCommand(stdout, "awk", "{print $1}")
-	require.NoError(t, err, string(stderr))
-	patternID := strings.TrimSpace(string(stdout))
-	require.Equal(t, "1", patternID)
+	patternsWithAllTags := getPatternsWithAllTags(t, "fruit", "yellow")
+	require.NotEmpty(t, patternsWithAllTags)
+	require.Equal(t, "バナ", patternsWithAllTags[0].GetKey())
+	require.Equal(t, int32(1), patternsWithAllTags[0].GetID())
 
 	_, stderr, err = runKakeiboDB("event", "applyPattern",
 		"--from", "2022-01-04", "--to", "2022-02-03")
@@ -205,19 +212,18 @@ func TestPattern(t *testing.T) {
 	_, stderr, err = runKakeiboDB("pattern", "removeTag",
 		"--patternID", "1", "-t", "fruit")
 	require.NoError(t, err, string(stderr))
-	stdout = getPatternsWithTags(t, "yellow")
-	stdout, stderr, err = runCommand(stdout, "grep", "バナ")
-	require.NoError(t, err, string(stderr))
-	_, _, err = runCommand(stdout, "grep", "fruit")
-	require.Error(t, err)
+	patternsWithAllTags = getPatternsWithAllTags(t, "fruit")
+	require.Empty(t, patternsWithAllTags)
+	patternsWithAllTags = getPatternsWithAllTags(t, "yellow")
+	require.NotEmpty(t, patternsWithAllTags)
 
 	// Delete a pattern.
 	_, stderr, err = runKakeiboDB("pattern", "delete", "--patternID", "1")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err = runKakeiboDB("pattern", "list")
+	stdout, stderr, err := runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
-	_, _, err = runCommand(stdout, "grep", "バナ")
-	require.Error(t, err)
+	patterns := parsePatternList(t, stdout)
+	require.Empty(t, patterns)
 }
 
 func TestSplit(t *testing.T) {
@@ -297,7 +303,7 @@ func TestSplit(t *testing.T) {
 			}
 		}
 	}
-	// The original candy event must deleted because its remaining money is 0.
+	// The original candy event must be deleted because its remaining money is 0.
 	candyEvents = slices.Collect(seq)
 	require.Len(t, candyEvents, 3)
 	afterCandyMoneySum = int32(0)
