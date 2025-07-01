@@ -8,7 +8,7 @@ import (
 type TagRepository interface {
 	Create(tag model.Tag) (int64, error)
 	Exist(tag model.Tag) (bool, error)
-	Delete(id int32) error
+	Delete(id int64) error
 	List() ([]*model.TagWithID, error)
 }
 
@@ -54,7 +54,7 @@ func (tu *TagUseCase) Create(tag model.Tag) {
 	}
 }
 
-func (tu *TagUseCase) Delete(id int32) {
+func (tu *TagUseCase) Delete(id int64) {
 	err := tu.tagRepo.Delete(id)
 	if err != nil {
 		log.Fatal(err)

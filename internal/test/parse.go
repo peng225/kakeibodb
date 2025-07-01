@@ -19,14 +19,14 @@ func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
 	for i, strEventLine := range strEventLines {
 		strEvent := strings.Fields(strEventLine)
 		require.Len(t, strEvent, 5, strEventLine)
-		id, err := strconv.ParseInt(strEvent[0], 10, 32)
+		id, err := strconv.ParseInt(strEvent[0], 10, 64)
 		require.NoError(t, err)
 		date, err := model.ParseDate(strEvent[1])
 		require.NoError(t, err)
 		money, err := strconv.ParseInt(strEvent[2], 10, 32)
 		require.NoError(t, err)
 		events[i] = model.NewEventWithID(
-			int32(id), *date, int32(money), strEvent[3], nil,
+			id, *date, int32(money), strEvent[3], nil,
 		)
 		for _, tag := range strings.Split(strEvent[4], ",") {
 			events[i].AddTag(model.Tag(tag))
@@ -45,10 +45,10 @@ func parseTagList(t *testing.T, rawTagList []byte) []*model.TagWithID {
 	for i, strTagLine := range strTagLines {
 		strTag := strings.Fields(strTagLine)
 		require.Len(t, strTag, 2, strTagLine)
-		id, err := strconv.ParseInt(strTag[0], 10, 32)
+		id, err := strconv.ParseInt(strTag[0], 10, 64)
 		require.NoError(t, err)
 		tags[i] = model.NewTagWithID(
-			int32(id), model.Tag(strTag[1]),
+			id, model.Tag(strTag[1]),
 		)
 	}
 	return tags
@@ -64,10 +64,10 @@ func parsePatternList(t *testing.T, rawPatternList []byte) []*model.PatternWithI
 	for i, strPatternLine := range strPatternLines {
 		strPattern := strings.Fields(strPatternLine)
 		require.Len(t, strPattern, 3, strPatternLine)
-		id, err := strconv.ParseInt(strPattern[0], 10, 32)
+		id, err := strconv.ParseInt(strPattern[0], 10, 64)
 		require.NoError(t, err)
 		patterns[i] = model.NewPatternWithID(
-			int32(id), strPattern[1], nil,
+			id, strPattern[1], nil,
 		)
 		for _, tag := range strings.Split(strPattern[2], ",") {
 			patterns[i].AddTag(model.Tag(tag))

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"kakeibodb/internal/model"
-	"kakeibodb/internal/repository/mysql/query/query"
+	"kakeibodb/internal/repository/mysql/sqlc/query"
 	"time"
 )
 
@@ -68,7 +68,7 @@ func (er *EventRepository) Exist(event *model.Event) (bool, error) {
 	return true, nil
 }
 
-func (er *EventRepository) Get(id int32) (*model.Event, error) {
+func (er *EventRepository) Get(id int64) (*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.GetEventByID(ctx, id)
 	if err != nil {
@@ -77,7 +77,7 @@ func (er *EventRepository) Get(id int32) (*model.Event, error) {
 	return model.NewEvent(res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
 }
 
-func (er *EventRepository) Delete(id int32) error {
+func (er *EventRepository) Delete(id int64) error {
 	ctx := context.Background()
 	err := er.q.DeleteEventByID(ctx, id)
 	if err != nil {

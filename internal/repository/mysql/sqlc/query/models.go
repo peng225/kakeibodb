@@ -9,28 +9,28 @@ import (
 )
 
 type Event struct {
-	ID          int32
+	ID          int64
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
 }
 
 type EventToTag struct {
-	EventID sql.NullInt32
-	TagID   sql.NullInt32
+	EventID sql.NullInt64
+	TagID   sql.NullInt64
 }
 
 type Pattern struct {
-	ID        int32
+	ID        int64
 	KeyString sql.NullString
 }
 
 type PatternToTag struct {
-	PatternID sql.NullInt32
-	TagID     sql.NullInt32
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
 }
 
 type Tag struct {
-	ID   int32
+	ID   int64
 	Name sql.NullString
 }

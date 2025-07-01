@@ -9,7 +9,7 @@ type Pattern struct {
 
 type PatternWithID struct {
 	Pattern
-	id int32
+	id int64
 }
 
 func NewPattern(key string, tags []Tag) *Pattern {
@@ -35,13 +35,13 @@ func (p *Pattern) AddTag(tag Tag) {
 	}
 }
 
-func NewPatternWithID(id int32, key string, tags []Tag) *PatternWithID {
+func NewPatternWithID(id int64, key string, tags []Tag) *PatternWithID {
 	return &PatternWithID{
 		Pattern: *NewPattern(key, tags),
 		id:      id,
 	}
 }
 
-func (p *PatternWithID) GetID() int32 {
+func (p *PatternWithID) GetID() int64 {
 	return p.id
 }

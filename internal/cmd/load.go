@@ -32,7 +32,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		parentEventID, err := cmd.Flags().GetInt32("parentEventID")
+		parentEventID, err := cmd.Flags().GetInt64("parentEventID")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -80,7 +80,7 @@ func init() {
 	loadCmd.Flags().StringP("file", "f", "", "Input file path")
 	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
 	loadCmd.Flags().BoolP("credit", "", false, "Load credit card event data")
-	loadCmd.Flags().Int32P("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
+	loadCmd.Flags().Int64P("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
 
 	loadCmd.MarkFlagsMutuallyExclusive("file", "dir")
 	loadCmd.MarkFlagsOneRequired("file", "dir")

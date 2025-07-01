@@ -14,8 +14,8 @@ import (
 type EventRepository interface {
 	Create(event *model.Event) (int64, error)
 	Exist(event *model.Event) (bool, error)
-	Get(id int32) (*model.Event, error)
-	Delete(id int32) error
+	Get(id int64) (*model.Event, error)
+	Delete(id int64) error
 	ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error)
 	ListOutcomesWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
 	List(from, to *time.Time) ([]*model.EventWithID, error)
@@ -132,7 +132,7 @@ func (eu *EventUseCase) LoadFromDir(dir string) {
 	}
 }
 
-func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int32) {
+func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) {
 	csv := event.NewCSV()
 	csv.Open(file)
 

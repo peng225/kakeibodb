@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"kakeibodb/internal/model"
-	"kakeibodb/internal/repository/mysql/query/query"
+	"kakeibodb/internal/repository/mysql/sqlc/query"
 )
 
 type TagRepository struct {
@@ -46,7 +46,7 @@ func (tr *TagRepository) Exist(tag model.Tag) (bool, error) {
 	return true, nil
 }
 
-func (tr *TagRepository) Delete(id int32) error {
+func (tr *TagRepository) Delete(id int64) error {
 	ctx := context.Background()
 	err := tr.q.DeleteTagByID(ctx, id)
 	if err != nil {
