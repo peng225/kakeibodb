@@ -10,7 +10,7 @@ setup:
 
 .PHONY: generate
 generate:
-	sqlc generate -f internal/repository/mysql/query/sqlc.yaml
+	sqlc generate -f internal/repository/mysql/sqlc/sqlc.yaml
 
 .PHONY: test
 test: $(KAKEIBODB)
