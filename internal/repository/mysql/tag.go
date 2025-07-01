@@ -46,7 +46,7 @@ func (tr *TagRepository) Exist(tag model.Tag) (bool, error) {
 	return true, nil
 }
 
-func (tr *TagRepository) Delete(id int32) error {
+func (tr *TagRepository) Delete(id int64) error {
 	ctx := context.Background()
 	err := tr.q.DeleteTagByID(ctx, id)
 	if err != nil {

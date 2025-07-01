@@ -42,7 +42,7 @@ DELETE FROM event
 WHERE id = ?
 `
 
-func (q *Queries) DeleteEventByID(ctx context.Context, id int32) error {
+func (q *Queries) DeleteEventByID(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteEventByID, id)
 	return err
 }
@@ -52,7 +52,7 @@ DELETE FROM tag
 WHERE id = ?
 `
 
-func (q *Queries) DeleteTagByID(ctx context.Context, id int32) error {
+func (q *Queries) DeleteTagByID(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteTagByID, id)
 	return err
 }
@@ -85,7 +85,7 @@ SELECT id, dt, money, description FROM event
 WHERE id = ?
 `
 
-func (q *Queries) GetEventByID(ctx context.Context, id int32) (Event, error) {
+func (q *Queries) GetEventByID(ctx context.Context, id int64) (Event, error) {
 	row := q.db.QueryRowContext(ctx, getEventByID, id)
 	var i Event
 	err := row.Scan(
@@ -122,7 +122,7 @@ type ListEventsParams struct {
 }
 
 type ListEventsRow struct {
-	ID          int32
+	ID          int64
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
@@ -175,7 +175,7 @@ type ListEventsWithTagsParams struct {
 }
 
 type ListEventsWithTagsRow struct {
-	ID          int32
+	ID          int64
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
@@ -239,7 +239,7 @@ type ListOutcomeEventsParams struct {
 }
 
 type ListOutcomeEventsRow struct {
-	ID          int32
+	ID          int64
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
@@ -293,7 +293,7 @@ type ListOutcomeEventsWithTagsParams struct {
 }
 
 type ListOutcomeEventsWithTagsRow struct {
-	ID          int32
+	ID          int64
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString

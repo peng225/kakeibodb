@@ -18,7 +18,7 @@ type Event struct {
 
 type EventWithID struct {
 	Event
-	id int32
+	id int64
 }
 
 func ParseDate(ds string) (*time.Time, error) {
@@ -74,7 +74,7 @@ func (e *Event) AddTag(tag Tag) {
 	}
 }
 
-func NewEventWithID(id int32, date time.Time, money int32,
+func NewEventWithID(id int64, date time.Time, money int32,
 	desc string, tags []Tag) *EventWithID {
 	if len([]rune(desc)) >= eventDescLength {
 		desc = string([]rune(desc)[0:eventDescLength])
@@ -85,6 +85,6 @@ func NewEventWithID(id int32, date time.Time, money int32,
 	}
 }
 
-func (e *EventWithID) GetID() int32 {
+func (e *EventWithID) GetID() int64 {
 	return e.id
 }

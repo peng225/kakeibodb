@@ -110,7 +110,7 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	eventsWithAllTags := getEventsWithAllTags(t, "foo", "bar")
 	require.Len(t, eventsWithAllTags, 1)
-	require.Equal(t, int32(1), eventsWithAllTags[0].GetID())
+	require.Equal(t, int64(1), eventsWithAllTags[0].GetID())
 
 	// Remove tags from a event.
 	_, stderr, err = runKakeiboDB("event", "removeTag", "--eventID", "1", "-t", "foo")
@@ -194,7 +194,7 @@ func TestPattern(t *testing.T) {
 	patternsWithAllTags := getPatternsWithAllTags(t, "fruit", "yellow")
 	require.NotEmpty(t, patternsWithAllTags)
 	require.Equal(t, "バナ", patternsWithAllTags[0].GetKey())
-	require.Equal(t, int32(1), patternsWithAllTags[0].GetID())
+	require.Equal(t, int64(1), patternsWithAllTags[0].GetID())
 
 	_, stderr, err = runKakeiboDB("event", "applyPattern",
 		"--from", "2022-01-04", "--to", "2022-02-03")
