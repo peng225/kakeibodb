@@ -21,25 +21,6 @@ func (th *PatternHandler) Close() {
 	th.dbClient.Close()
 }
 
-func (th *PatternHandler) CreatePattern(key string) {
-	var insertData []any = []any{key}
-	id, err := th.dbClient.Insert(db_client.PatternTableName, true, insertData)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Created a new record with ID %d", id)
-}
-
-func (th *PatternHandler) DeletePattern(id int) {
-	patternEntry := db_client.PatternEntry{
-		ID: id,
-	}
-	err := th.dbClient.Delete(db_client.PatternTableName, patternEntry)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func (ph *PatternHandler) AddTag(patternID int, tagNames []string) {
 	for _, tagName := range tagNames {
 		tagID, err := getTagIDFromName(ph.dbClient, tagName)

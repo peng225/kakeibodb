@@ -29,6 +29,14 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 	return q.db.ExecContext(ctx, createEvent, arg.Dt, arg.Money, arg.Description)
 }
 
+const createPattern = `-- name: CreatePattern :execresult
+INSERT INTO pattern (key_string) VALUES (?)
+`
+
+func (q *Queries) CreatePattern(ctx context.Context, keyString sql.NullString) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createPattern, keyString)
+}
+
 const createTag = `-- name: CreateTag :execresult
 INSERT INTO tag (name) VALUES (?)
 `
@@ -44,6 +52,16 @@ WHERE id = ?
 
 func (q *Queries) DeleteEventByID(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteEventByID, id)
+	return err
+}
+
+const deletePatternByID = `-- name: DeletePatternByID :exec
+DELETE FROM pattern
+WHERE id = ?
+`
+
+func (q *Queries) DeletePatternByID(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deletePatternByID, id)
 	return err
 }
 
@@ -94,6 +112,17 @@ func (q *Queries) GetEventByID(ctx context.Context, id int64) (Event, error) {
 		&i.Money,
 		&i.Description,
 	)
+	return i, err
+}
+
+const getPattern = `-- name: GetPattern :one
+SELECT id, key_string FROM pattern WHERE key_string = ?
+`
+
+func (q *Queries) GetPattern(ctx context.Context, keyString sql.NullString) (Pattern, error) {
+	row := q.db.QueryRowContext(ctx, getPattern, keyString)
+	var i Pattern
+	err := row.Scan(&i.ID, &i.KeyString)
 	return i, err
 }
 

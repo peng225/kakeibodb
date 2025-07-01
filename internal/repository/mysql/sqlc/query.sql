@@ -65,3 +65,13 @@ WHERE id = ?;
 -- name: ListTags :many
 SELECT * FROM tag
 ORDER BY tag.id;
+
+-- name: CreatePattern :execresult
+INSERT INTO pattern (key_string) VALUES (?);
+
+-- name: GetPattern :one
+SELECT * FROM pattern WHERE key_string = ?;
+
+-- name: DeletePatternByID :exec
+DELETE FROM pattern
+WHERE id = ?;
