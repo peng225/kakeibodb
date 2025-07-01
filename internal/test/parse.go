@@ -34,3 +34,22 @@ func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
 	}
 	return events
 }
+
+func parseTagList(t *testing.T, rawTagList []byte) []*model.TagWithID {
+	t.Helper()
+	strTagLines := strings.Split(strings.TrimSpace(string(rawTagList)), "\n")
+	require.LessOrEqual(t, 1, len(strTagLines))
+	// Skip header
+	strTagLines = strTagLines[1:]
+	tags := make([]*model.TagWithID, len(strTagLines))
+	for i, strTagLine := range strTagLines {
+		strTag := strings.Fields(strTagLine)
+		require.Len(t, strTag, 2, strTagLine)
+		id, err := strconv.ParseInt(strTag[0], 10, 32)
+		require.NoError(t, err)
+		tags[i] = model.NewTagWithID(
+			int32(id), model.Tag(strTag[1]),
+		)
+	}
+	return tags
+}

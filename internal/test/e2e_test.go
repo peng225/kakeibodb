@@ -100,10 +100,9 @@ func TestTag(t *testing.T) {
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("tag", "list")
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runCommand(stdout, "grep", "foo")
-	require.NoError(t, err, string(stderr))
-	_, stderr, err = runCommand(stdout, "grep", "bar")
-	require.NoError(t, err, string(stderr))
+	tagList := parseTagList(t, stdout)
+	require.Equal(t, "foo", tagList[0].String())
+	require.Equal(t, "bar", tagList[1].String())
 	_, stderr, err = runKakeiboDB("event", "addTag", "--eventID", "1", "--tagNames", "foo,bar")
 	require.NoError(t, err, string(stderr))
 	// Idempotency check.
@@ -138,8 +137,8 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	stdout, stderr, err = runKakeiboDB("tag", "list")
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runCommand(stdout, "grep", "-e", "foo", "-e", "bar")
-	require.Error(t, err, string(stderr))
+	tags := parseTagList(t, stdout)
+	require.Empty(t, tags)
 }
 
 func TestUserEnv(t *testing.T) {
