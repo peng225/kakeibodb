@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"kakeibodb/internal/model"
-	"kakeibodb/internal/repository/mysql/query/query"
+	"kakeibodb/internal/repository/mysql/sqlc/query"
 )
 
 type TagRepository struct {
