@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -28,9 +28,14 @@ to quickly create a Cobra application.`,
 			log.Fatal("Key string must be specified.")
 		}
 
-		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer ph.Close()
-		ph.CreatePattern(key)
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		patternRepo := mysql.NewPatternRepository(db)
+		patternUC := usecase.NewPatternUseCase(patternRepo)
+		patternUC.Create(key)
 	},
 }
 

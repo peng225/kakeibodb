@@ -65,3 +65,19 @@ WHERE id = ?;
 -- name: ListTags :many
 SELECT * FROM tag
 ORDER BY tag.id;
+
+-- name: CreatePattern :execresult
+INSERT INTO pattern (key_string) VALUES (?);
+
+-- name: GetPattern :one
+SELECT * FROM pattern WHERE key_string = ?;
+
+-- name: DeletePatternByID :exec
+DELETE FROM pattern
+WHERE id = ?;
+
+-- name: ListPatterns :many
+SELECT pattern.*, tag.name AS tags FROM pattern
+LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
+LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
+ORDER BY pattern.id;

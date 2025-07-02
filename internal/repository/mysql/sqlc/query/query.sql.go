@@ -29,6 +29,14 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 	return q.db.ExecContext(ctx, createEvent, arg.Dt, arg.Money, arg.Description)
 }
 
+const createPattern = `-- name: CreatePattern :execresult
+INSERT INTO pattern (key_string) VALUES (?)
+`
+
+func (q *Queries) CreatePattern(ctx context.Context, keyString sql.NullString) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createPattern, keyString)
+}
+
 const createTag = `-- name: CreateTag :execresult
 INSERT INTO tag (name) VALUES (?)
 `
@@ -44,6 +52,16 @@ WHERE id = ?
 
 func (q *Queries) DeleteEventByID(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteEventByID, id)
+	return err
+}
+
+const deletePatternByID = `-- name: DeletePatternByID :exec
+DELETE FROM pattern
+WHERE id = ?
+`
+
+func (q *Queries) DeletePatternByID(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deletePatternByID, id)
 	return err
 }
 
@@ -94,6 +112,17 @@ func (q *Queries) GetEventByID(ctx context.Context, id int64) (Event, error) {
 		&i.Money,
 		&i.Description,
 	)
+	return i, err
+}
+
+const getPattern = `-- name: GetPattern :one
+SELECT id, key_string FROM pattern WHERE key_string = ?
+`
+
+func (q *Queries) GetPattern(ctx context.Context, keyString sql.NullString) (Pattern, error) {
+	row := q.db.QueryRowContext(ctx, getPattern, keyString)
+	var i Pattern
+	err := row.Scan(&i.ID, &i.KeyString)
 	return i, err
 }
 
@@ -328,6 +357,42 @@ func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcome
 			&i.Description,
 			&i.Tags,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPatterns = `-- name: ListPatterns :many
+SELECT pattern.id, pattern.key_string, tag.name AS tags FROM pattern
+LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
+LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
+ORDER BY pattern.id
+`
+
+type ListPatternsRow struct {
+	ID        int64
+	KeyString sql.NullString
+	Tags      sql.NullString
+}
+
+func (q *Queries) ListPatterns(ctx context.Context) ([]ListPatternsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPatterns)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatternsRow
+	for rows.Next() {
+		var i ListPatternsRow
+		if err := rows.Scan(&i.ID, &i.KeyString, &i.Tags); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
