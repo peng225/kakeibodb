@@ -173,62 +173,6 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]s
 	return header, entries, nil
 }
 
-func (mc *MySQLClient) Delete(table string, param any) error {
-	queryStr := "delete from " + table
-
-	if param == nil {
-		return fmt.Errorf("param should not be nil.")
-	}
-	st := reflect.TypeOf(param)
-	sv := reflect.ValueOf(param)
-	firstField := true
-
-	for i := 0; i < sv.NumField(); i++ {
-		fv := sv.Field(i)
-		var valueStr string
-		var ok bool
-		switch fv.Kind() {
-		case reflect.String:
-			valueStr, ok = fv.Interface().(string)
-			if !ok {
-				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-			}
-			if valueStr == "" {
-				continue
-			}
-			valueStr = "'" + valueStr + "'"
-		case reflect.Int:
-			valueInt, ok := fv.Interface().(int)
-			if !ok {
-				return fmt.Errorf("type conversion failed. fv.Kind = %v", fv.Kind())
-			}
-			if valueInt == 0 {
-				continue
-			}
-			valueStr = strconv.Itoa(valueInt)
-		}
-		if firstField {
-			queryStr += " where "
-			firstField = false
-		} else {
-			queryStr += " and "
-		}
-		ft := st.Field(i)
-		queryStr += fmt.Sprintf("%s = %s", ft.Tag.Get("colName"), valueStr)
-	}
-
-	if strings.HasSuffix(queryStr, table) {
-		return errors.New("no valid parameter was specified.")
-	}
-
-	_, err := mc.db.Query(queryStr)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (mc *MySQLClient) GetPaymentEventWithAllTags(tags []string, from, to string) ([]map[string]string, error) {
 	singleQuotedTags := singleQuoteEachString(tags)
 	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (tag.name in (%s)) and (event.money < 0) group by %s.id order by event.dt;",
@@ -351,46 +295,6 @@ func (mc *MySQLClient) GetOutcomeSumWithoutTag(from, to string) int {
 		money = 0
 	}
 	return money
-}
-
-func (mc *MySQLClient) SelectPatternAll() {
-	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.pattern_id left outer join %s on %s.id = %s.tag_id group by %s.id;",
-		db_client.PatternTableName, db_client.TagTableName,
-		db_client.PatternTableName, db_client.PatternToTagTableName,
-		db_client.PatternTableName, db_client.PatternToTagTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.PatternToTagTableName,
-		db_client.PatternTableName)
-	rows, err := mc.db.Query(queryStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	columns, err := rows.Columns()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Print header
-	for _, column := range columns {
-		fmt.Printf("%s\t", column)
-	}
-	fmt.Println("")
-
-	// Print body
-	for rows.Next() {
-		var id int
-		var key string
-		var tags *string
-		err := rows.Scan(&id, &key, &tags)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if tags == nil {
-			tmpTags := "NULL"
-			tags = &tmpTags
-		}
-		fmt.Printf("%v\t%-8s\t%s\n", id, key, strings.ReplaceAll(*tags, " ", ""))
-	}
 }
 
 func (mc *MySQLClient) Update(table string, cond map[string]string, data map[string]string) error {
