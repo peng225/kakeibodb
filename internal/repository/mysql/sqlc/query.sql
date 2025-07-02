@@ -81,3 +81,14 @@ SELECT pattern.*, tag.name AS tags FROM pattern
 LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
 LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
 ORDER BY pattern.id;
+
+-- name: MapEventToTag :execresult
+INSERT INTO event_to_tag (event_id, tag_id) VALUES (?, ?);
+
+-- name: UnmapEventFromTag :execresult
+DELETE FROM event_to_tag
+where event_id = ? AND tag_id = ?;
+
+-- name: GetEventToTagMap :one
+SELECT * FROM event_to_tag
+WHERE event_id = ? AND tag_id = ?;

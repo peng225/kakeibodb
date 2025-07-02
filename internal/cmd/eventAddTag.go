@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -20,7 +20,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		eventID, err := cmd.Flags().GetInt("eventID")
+		eventID, err := cmd.Flags().GetInt64("eventID")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -32,9 +32,14 @@ to quickly create a Cobra application.`,
 			log.Fatal("both eventID and tagNames must be specified.")
 		}
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer eh.Close()
-		eh.AddTag(eventID, tagNames)
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		etmRepo := mysql.NewEventTagMapRepository(db)
+		etmUC := usecase.NewEventTagMapUseCase(etmRepo)
+		etmUC.AddTag(eventID, tagNames)
 	},
 }
 
@@ -50,6 +55,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// addTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	eventAddTagCmd.Flags().Int("eventID", 0, "credit == false: Event ID, credit == true: Credit card event ID")
+	eventAddTagCmd.Flags().Int64("eventID", 0, "credit == false: Event ID, credit == true: Credit card event ID")
 	eventAddTagCmd.Flags().StringSlice("tagNames", nil, "Tag Names")
 }

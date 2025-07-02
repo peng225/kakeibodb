@@ -117,6 +117,9 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("event", "removeTag", "--eventID", "1", "-t", "bar")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("event", "removeTag", "--eventID", "1", "-t", "bar")
+	require.NoError(t, err, string(stderr))
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)

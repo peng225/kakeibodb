@@ -51,21 +51,6 @@ func (eh *EventHandler) AddTag(eventID int, tagNames []string) {
 	}
 }
 
-func (eh *EventHandler) RemoveTag(eventID int, tagName string) {
-	tagID, err := getTagIDFromName(eh.dbClient, tagName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	eventToTagEntry := db_client.EventToTagEntry{
-		EventID: eventID,
-		TagID:   tagID,
-	}
-	err = eh.dbClient.Delete(db_client.EventToTagTableName, eventToTagEntry)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func (eh *EventHandler) ApplyPattern(from, to string) {
 	_, events, err := eh.dbClient.Select(db_client.EventTableName,
 		fmt.Sprintf("where %s between '%s' and '%s'",
