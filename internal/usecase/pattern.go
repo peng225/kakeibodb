@@ -12,6 +12,11 @@ type PatternRepository interface {
 	List() ([]*model.PatternWithID, error)
 }
 
+type PatternTagMapRepository interface {
+	Map(patternID int64, tagName string) error
+	Unmap(patternID int64, tagName string) error
+}
+
 type PatternPresenter interface {
 	Present(patterns []*model.PatternWithID)
 }
@@ -25,6 +30,10 @@ type PatternPresentUseCase struct {
 	patternPresenter PatternPresenter
 }
 
+type PatternTagMapUsecase struct {
+	ptmRepo PatternTagMapRepository
+}
+
 func NewPatternUseCase(patternRepo PatternRepository) *PatternUseCase {
 	return &PatternUseCase{
 		patternRepo: patternRepo,
@@ -35,6 +44,12 @@ func NewPatternPresentUseCase(patternRepo PatternRepository, patternPresenter Pa
 	return &PatternPresentUseCase{
 		PatternUseCase:   *NewPatternUseCase(patternRepo),
 		patternPresenter: patternPresenter,
+	}
+}
+
+func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsecase {
+	return &PatternTagMapUsecase{
+		ptmRepo: ptmRepo,
 	}
 }
 
@@ -67,4 +82,20 @@ func (pu *PatternPresentUseCase) List() {
 	}
 
 	pu.patternPresenter.Present(tags)
+}
+
+func (ptmu *PatternTagMapUsecase) AddTag(patternID int64, tagNames []string) {
+	for _, tagName := range tagNames {
+		err := ptmu.ptmRepo.Map(patternID, tagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (ptmu *PatternTagMapUsecase) RemoveTag(patternID int64, tagName string) {
+	err := ptmu.ptmRepo.Unmap(patternID, tagName)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -22,6 +22,11 @@ type EventRepository interface {
 	ListWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
 }
 
+type EventTagMapRepository interface {
+	Map(eventID int64, tagName string) error
+	Unmap(eventID int64, tagName string) error
+}
+
 type EventPresenter interface {
 	Present(events []*model.EventWithID)
 }
@@ -35,6 +40,10 @@ type EventPresentUseCase struct {
 	eventPresenter EventPresenter
 }
 
+type EventTagMapUsecase struct {
+	etmRepo EventTagMapRepository
+}
+
 func NewEventUseCase(eventRepo EventRepository) *EventUseCase {
 	return &EventUseCase{
 		eventRepo: eventRepo,
@@ -45,6 +54,12 @@ func NewEventPresentUseCase(eventRepo EventRepository, eventPresenter EventPrese
 	return &EventPresentUseCase{
 		EventUseCase:   *NewEventUseCase(eventRepo),
 		eventPresenter: eventPresenter,
+	}
+}
+
+func NewEventTagMapUseCase(etmRepo EventTagMapRepository) *EventTagMapUsecase {
+	return &EventTagMapUsecase{
+		etmRepo: etmRepo,
 	}
 }
 
@@ -238,4 +253,20 @@ func (eu *EventPresentUseCase) PresentAll(tags []model.Tag, from, to *time.Time)
 	}
 
 	eu.eventPresenter.Present(events)
+}
+
+func (etmu *EventTagMapUsecase) AddTag(eventID int64, tagNames []string) {
+	for _, tagName := range tagNames {
+		err := etmu.etmRepo.Map(eventID, tagName)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (etmu *EventTagMapUsecase) RemoveTag(eventID int64, tagName string) {
+	err := etmu.etmRepo.Unmap(eventID, tagName)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -115,6 +115,23 @@ func (q *Queries) GetEventByID(ctx context.Context, id int64) (Event, error) {
 	return i, err
 }
 
+const getEventToTagMap = `-- name: GetEventToTagMap :one
+SELECT event_id, tag_id FROM event_to_tag
+WHERE event_id = ? AND tag_id = ?
+`
+
+type GetEventToTagMapParams struct {
+	EventID sql.NullInt64
+	TagID   sql.NullInt64
+}
+
+func (q *Queries) GetEventToTagMap(ctx context.Context, arg GetEventToTagMapParams) (EventToTag, error) {
+	row := q.db.QueryRowContext(ctx, getEventToTagMap, arg.EventID, arg.TagID)
+	var i EventToTag
+	err := row.Scan(&i.EventID, &i.TagID)
+	return i, err
+}
+
 const getPattern = `-- name: GetPattern :one
 SELECT id, key_string FROM pattern WHERE key_string = ?
 `
@@ -123,6 +140,23 @@ func (q *Queries) GetPattern(ctx context.Context, keyString sql.NullString) (Pat
 	row := q.db.QueryRowContext(ctx, getPattern, keyString)
 	var i Pattern
 	err := row.Scan(&i.ID, &i.KeyString)
+	return i, err
+}
+
+const getPatternToTagMap = `-- name: GetPatternToTagMap :one
+SELECT pattern_id, tag_id FROM pattern_to_tag
+WHERE pattern_id = ? AND tag_id = ?
+`
+
+type GetPatternToTagMapParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) GetPatternToTagMap(ctx context.Context, arg GetPatternToTagMapParams) (PatternToTag, error) {
+	row := q.db.QueryRowContext(ctx, getPatternToTagMap, arg.PatternID, arg.TagID)
+	var i PatternToTag
+	err := row.Scan(&i.PatternID, &i.TagID)
 	return i, err
 }
 
@@ -432,4 +466,58 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const mapEventToTag = `-- name: MapEventToTag :execresult
+INSERT INTO event_to_tag (event_id, tag_id) VALUES (?, ?)
+`
+
+type MapEventToTagParams struct {
+	EventID sql.NullInt64
+	TagID   sql.NullInt64
+}
+
+func (q *Queries) MapEventToTag(ctx context.Context, arg MapEventToTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, mapEventToTag, arg.EventID, arg.TagID)
+}
+
+const mapPatternToTag = `-- name: MapPatternToTag :execresult
+INSERT INTO pattern_to_tag (pattern_id, tag_id) VALUES (?, ?)
+`
+
+type MapPatternToTagParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) MapPatternToTag(ctx context.Context, arg MapPatternToTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, mapPatternToTag, arg.PatternID, arg.TagID)
+}
+
+const unmapEventFromTag = `-- name: UnmapEventFromTag :execresult
+DELETE FROM event_to_tag
+where event_id = ? AND tag_id = ?
+`
+
+type UnmapEventFromTagParams struct {
+	EventID sql.NullInt64
+	TagID   sql.NullInt64
+}
+
+func (q *Queries) UnmapEventFromTag(ctx context.Context, arg UnmapEventFromTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, unmapEventFromTag, arg.EventID, arg.TagID)
+}
+
+const unmapPatternFromTag = `-- name: UnmapPatternFromTag :execresult
+DELETE FROM pattern_to_tag
+where pattern_id = ? AND tag_id = ?
+`
+
+type UnmapPatternFromTagParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) UnmapPatternFromTag(ctx context.Context, arg UnmapPatternFromTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, unmapPatternFromTag, arg.PatternID, arg.TagID)
 }
