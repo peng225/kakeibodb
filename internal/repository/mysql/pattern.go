@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/sqlc/query"
 )
 
@@ -52,4 +53,31 @@ func (pr *PatternRepository) Delete(id int64) error {
 		return fmt.Errorf("failed to delete pattern by ID: %w", err)
 	}
 	return nil
+}
+
+func (pr *PatternRepository) List() ([]*model.PatternWithID, error) {
+	ctx := context.Background()
+	res, err := pr.q.ListPatterns(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list patterns: %w", err)
+	}
+	patterns := make([]*model.PatternWithID, 0)
+	for _, pwt := range res {
+		p := model.NewPatternWithID(pwt.ID, pwt.KeyString.String, nil)
+		tag := model.Tag(pwt.Tags.String)
+		if len(patterns) == 0 {
+			p.AddTag(tag)
+			patterns = append(patterns, p)
+		} else {
+			lastPattern := patterns[len(patterns)-1]
+			if p.GetKey() == lastPattern.GetKey() {
+				lastPattern.AddTag(tag)
+				patterns[len(patterns)-1] = lastPattern
+			} else {
+				p.AddTag(tag)
+				patterns = append(patterns, p)
+			}
+		}
+	}
+	return patterns, nil
 }

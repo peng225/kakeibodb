@@ -9,6 +9,7 @@ type PatternRepository interface {
 	Create(key string) (int64, error)
 	Exist(key string) (bool, error)
 	Delete(id int64) error
+	List() ([]*model.PatternWithID, error)
 }
 
 type PatternPresenter interface {
@@ -57,4 +58,13 @@ func (pu *PatternUseCase) Delete(id int64) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (pu *PatternPresentUseCase) List() {
+	tags, err := pu.patternRepo.List()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pu.patternPresenter.Present(tags)
 }

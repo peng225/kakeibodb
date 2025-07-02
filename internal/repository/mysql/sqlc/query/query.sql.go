@@ -370,6 +370,42 @@ func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcome
 	return items, nil
 }
 
+const listPatterns = `-- name: ListPatterns :many
+SELECT pattern.id, pattern.key_string, tag.name AS tags FROM pattern
+LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
+LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
+ORDER BY pattern.id
+`
+
+type ListPatternsRow struct {
+	ID        int64
+	KeyString sql.NullString
+	Tags      sql.NullString
+}
+
+func (q *Queries) ListPatterns(ctx context.Context) ([]ListPatternsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listPatterns)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatternsRow
+	for rows.Next() {
+		var i ListPatternsRow
+		if err := rows.Scan(&i.ID, &i.KeyString, &i.Tags); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTags = `-- name: ListTags :many
 SELECT id, name FROM tag
 ORDER BY tag.id
