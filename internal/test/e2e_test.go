@@ -215,6 +215,10 @@ func TestPattern(t *testing.T) {
 	_, stderr, err = runKakeiboDB("pattern", "removeTag",
 		"--patternID", "1", "-t", "fruit")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("pattern", "removeTag",
+		"--patternID", "1", "-t", "fruit")
+	require.NoError(t, err, string(stderr))
 	patternsWithAllTags = getPatternsWithAllTags(t, "fruit")
 	require.Empty(t, patternsWithAllTags)
 	patternsWithAllTags = getPatternsWithAllTags(t, "yellow")

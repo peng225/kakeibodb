@@ -143,6 +143,23 @@ func (q *Queries) GetPattern(ctx context.Context, keyString sql.NullString) (Pat
 	return i, err
 }
 
+const getPatternToTagMap = `-- name: GetPatternToTagMap :one
+SELECT pattern_id, tag_id FROM pattern_to_tag
+WHERE pattern_id = ? AND tag_id = ?
+`
+
+type GetPatternToTagMapParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) GetPatternToTagMap(ctx context.Context, arg GetPatternToTagMapParams) (PatternToTag, error) {
+	row := q.db.QueryRowContext(ctx, getPatternToTagMap, arg.PatternID, arg.TagID)
+	var i PatternToTag
+	err := row.Scan(&i.PatternID, &i.TagID)
+	return i, err
+}
+
 const getTag = `-- name: GetTag :one
 SELECT id, name FROM tag WHERE name = ?
 `
@@ -464,6 +481,19 @@ func (q *Queries) MapEventToTag(ctx context.Context, arg MapEventToTagParams) (s
 	return q.db.ExecContext(ctx, mapEventToTag, arg.EventID, arg.TagID)
 }
 
+const mapPatternToTag = `-- name: MapPatternToTag :execresult
+INSERT INTO pattern_to_tag (pattern_id, tag_id) VALUES (?, ?)
+`
+
+type MapPatternToTagParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) MapPatternToTag(ctx context.Context, arg MapPatternToTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, mapPatternToTag, arg.PatternID, arg.TagID)
+}
+
 const unmapEventFromTag = `-- name: UnmapEventFromTag :execresult
 DELETE FROM event_to_tag
 where event_id = ? AND tag_id = ?
@@ -476,4 +506,18 @@ type UnmapEventFromTagParams struct {
 
 func (q *Queries) UnmapEventFromTag(ctx context.Context, arg UnmapEventFromTagParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, unmapEventFromTag, arg.EventID, arg.TagID)
+}
+
+const unmapPatternFromTag = `-- name: UnmapPatternFromTag :execresult
+DELETE FROM pattern_to_tag
+where pattern_id = ? AND tag_id = ?
+`
+
+type UnmapPatternFromTagParams struct {
+	PatternID sql.NullInt64
+	TagID     sql.NullInt64
+}
+
+func (q *Queries) UnmapPatternFromTag(ctx context.Context, arg UnmapPatternFromTagParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, unmapPatternFromTag, arg.PatternID, arg.TagID)
 }

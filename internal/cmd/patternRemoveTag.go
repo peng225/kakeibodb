@@ -3,7 +3,7 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -20,7 +20,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		patternID, err := cmd.Flags().GetInt("patternID")
+		patternID, err := cmd.Flags().GetInt64("patternID")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -32,9 +32,14 @@ to quickly create a Cobra application.`,
 			log.Fatal("both patternID and tagName must be specified.")
 		}
 
-		ph := usecase.NewPatternHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer ph.Close()
-		ph.RemoveTag(patternID, tagName)
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+		ptmRepo := mysql.NewPatternTagMapRepository(db)
+		ptmUC := usecase.NewPatternTagMapUseCase(ptmRepo)
+		ptmUC.RemoveTag(patternID, tagName)
 	},
 }
 
@@ -50,7 +55,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	patternRemoveTagCmd.Flags().Int("patternID", 0, "Pattern ID")
+	patternRemoveTagCmd.Flags().Int64("patternID", 0, "Pattern ID")
 	patternRemoveTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
 
 	patternRemoveTagCmd.MarkFlagRequired("patternID")
