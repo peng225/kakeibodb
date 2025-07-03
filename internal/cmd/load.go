@@ -53,14 +53,12 @@ to quickly create a Cobra application.`,
 				log.Fatalf("invalid parentEventID %d\n", parentEventID)
 			}
 			eventUC.LoadCreditFromFile(file, parentEventID)
-
 		} else {
 			if file != "" {
 				eventUC.LoadFromFile(file)
 			} else {
 				eventUC.LoadFromDir(dir)
 			}
-
 		}
 	},
 }
