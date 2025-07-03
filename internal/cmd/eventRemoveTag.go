@@ -28,9 +28,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if eventID == 0 && tagName == "" {
-			log.Fatal("both eventID and tagName must be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
@@ -57,4 +54,7 @@ func init() {
 	// removeTagCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	eventRemoveTagCmd.Flags().Int64("eventID", 0, "Event ID")
 	eventRemoveTagCmd.Flags().StringP("tagName", "t", "", "Tag Name")
+
+	eventRemoveTagCmd.MarkFlagRequired("eventID")
+	eventRemoveTagCmd.MarkFlagRequired("tagName")
 }

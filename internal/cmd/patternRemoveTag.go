@@ -28,9 +28,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if patternID == 0 && tagName == "" {
-			log.Fatal("both patternID and tagName must be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {

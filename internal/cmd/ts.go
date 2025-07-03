@@ -58,7 +58,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// tsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	tsCmd.Flags().IntP("window", "", 3, "time window (month) for time series calculation")
-	tsCmd.Flags().IntP("interval", "", 1, "interval (month) for time series calculation")
-	tsCmd.Flags().IntP("top", "", 10, "the number of results for time series calculation")
+	tsCmd.Flags().Int("window", 3, "time window (month) for time series calculation")
+	tsCmd.Flags().Int("interval", 1, "interval (month) for time series calculation")
+	tsCmd.Flags().Int("top", 10, "the number of results for time series calculation")
 }

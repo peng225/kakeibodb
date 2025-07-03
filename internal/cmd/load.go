@@ -53,14 +53,12 @@ to quickly create a Cobra application.`,
 				log.Fatalf("invalid parentEventID %d\n", parentEventID)
 			}
 			eventUC.LoadCreditFromFile(file, parentEventID)
-
 		} else {
 			if file != "" {
 				eventUC.LoadFromFile(file)
 			} else {
 				eventUC.LoadFromDir(dir)
 			}
-
 		}
 	},
 }
@@ -79,8 +77,8 @@ func init() {
 	// loadCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	loadCmd.Flags().StringP("file", "f", "", "Input file path")
 	loadCmd.Flags().StringP("dir", "d", "", "Input directory path")
-	loadCmd.Flags().BoolP("credit", "", false, "Load credit card event data")
-	loadCmd.Flags().Int64P("parentEventID", "", -1, "The parent event ID related to the credit events to be loaded")
+	loadCmd.Flags().Bool("credit", false, "Load credit card event data")
+	loadCmd.Flags().Int64("parentEventID", -1, "The parent event ID related to the credit events to be loaded")
 
 	loadCmd.MarkFlagsMutuallyExclusive("file", "dir")
 	loadCmd.MarkFlagsOneRequired("file", "dir")

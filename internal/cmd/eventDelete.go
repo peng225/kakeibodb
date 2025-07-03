@@ -35,4 +35,6 @@ func init() {
 	// is called directly, e.g.:
 	// eventDeleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	eventDeleteCmd.Flags().Int("eventID", 0, "Event ID")
+
+	eventDeleteCmd.MarkFlagRequired("eventID")
 }

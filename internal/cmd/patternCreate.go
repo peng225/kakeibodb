@@ -24,9 +24,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if key == "" {
-			log.Fatal("Key string must be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {

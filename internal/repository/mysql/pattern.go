@@ -55,15 +55,15 @@ func (pr *PatternRepository) Delete(id int64) error {
 	return nil
 }
 
-func (pr *PatternRepository) List() ([]*model.PatternWithID, error) {
+func (pr *PatternRepository) List() ([]*model.Pattern, error) {
 	ctx := context.Background()
 	res, err := pr.q.ListPatterns(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list patterns: %w", err)
 	}
-	patterns := make([]*model.PatternWithID, 0)
+	patterns := make([]*model.Pattern, 0)
 	for _, pwt := range res {
-		p := model.NewPatternWithID(pwt.ID, pwt.KeyString.String, nil)
+		p := model.NewPattern(pwt.ID, pwt.KeyString.String, nil)
 		tag := model.Tag(pwt.Tags.String)
 		if len(patterns) == 0 {
 			p.AddTag(tag)

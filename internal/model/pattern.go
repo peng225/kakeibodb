@@ -3,17 +3,14 @@ package model
 import "slices"
 
 type Pattern struct {
+	id   int64
 	key  string
 	tags []Tag
 }
 
-type PatternWithID struct {
-	Pattern
-	id int64
-}
-
-func NewPattern(key string, tags []Tag) *Pattern {
+func NewPattern(id int64, key string, tags []Tag) *Pattern {
 	return &Pattern{
+		id:   id,
 		key:  key,
 		tags: tags,
 	}
@@ -35,13 +32,6 @@ func (p *Pattern) AddTag(tag Tag) {
 	}
 }
 
-func NewPatternWithID(id int64, key string, tags []Tag) *PatternWithID {
-	return &PatternWithID{
-		Pattern: *NewPattern(key, tags),
-		id:      id,
-	}
-}
-
-func (p *PatternWithID) GetID() int64 {
+func (p *Pattern) GetID() int64 {
 	return p.id
 }

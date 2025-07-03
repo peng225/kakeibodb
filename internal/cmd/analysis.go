@@ -34,8 +34,8 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// analysisCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	analysisCmd.PersistentFlags().StringP("from", "", "2018-01-01", "the beginning of time range")
-	analysisCmd.PersistentFlags().StringP("to", "", "2100-12-31", "the end of time range")
+	analysisCmd.PersistentFlags().String("from", "2018-01-01", "the beginning of time range")
+	analysisCmd.PersistentFlags().String("to", "2100-12-31", "the end of time range")
 }
 
 type commonFlags struct {
