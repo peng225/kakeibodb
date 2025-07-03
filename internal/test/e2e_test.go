@@ -154,11 +154,11 @@ func TestUserEnv(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 }
 
-func getPatternsWithAllTags(t *testing.T, tags ...string) []*model.PatternWithID {
+func getPatternsWithAllTags(t *testing.T, tags ...string) []*model.Pattern {
 	stdout, stderr, err := runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
 	patterns := parsePatternList(t, stdout)
-	seq := func(yield func(*model.PatternWithID) bool) {
+	seq := func(yield func(*model.Pattern) bool) {
 		for _, p := range patterns {
 			for _, tag := range p.GetTags() {
 				if !slices.ContainsFunc(tags, func(t string) bool {

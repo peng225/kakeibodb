@@ -13,7 +13,7 @@ func NewPatternPresenter() *PatternPresenter {
 	return &PatternPresenter{}
 }
 
-func (pp *PatternPresenter) Present(patterns []*model.PatternWithID) {
+func (pp *PatternPresenter) Present(patterns []*model.Pattern) {
 	fmt.Printf("%s\t%s\t%s\n", "ID", "key                             ", "tags")
 	for _, p := range patterns {
 		tagsToPrint := "NONE"

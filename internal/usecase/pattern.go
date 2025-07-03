@@ -9,7 +9,7 @@ type PatternRepository interface {
 	Create(key string) (int64, error)
 	Exist(key string) (bool, error)
 	Delete(id int64) error
-	List() ([]*model.PatternWithID, error)
+	List() ([]*model.Pattern, error)
 }
 
 type PatternTagMapRepository interface {
@@ -18,7 +18,7 @@ type PatternTagMapRepository interface {
 }
 
 type PatternPresenter interface {
-	Present(patterns []*model.PatternWithID)
+	Present(patterns []*model.Pattern)
 }
 
 type PatternUseCase struct {
