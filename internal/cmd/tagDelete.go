@@ -24,9 +24,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if tagID == 0 {
-			log.Fatal("tagID must be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
@@ -52,4 +49,6 @@ func init() {
 	// is called directly, e.g.:
 	// tagDeleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	tagDeleteCmd.Flags().Int64("tagID", 0, "Tag ID")
+
+	tagDeleteCmd.MarkFlagRequired("tagID")
 }

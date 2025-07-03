@@ -25,9 +25,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		if tagName == "" {
-			log.Fatal("tag name must be specified.")
-		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
@@ -53,4 +50,6 @@ func init() {
 	// is called directly, e.g.:
 	// tagCreateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	tagCreateCmd.Flags().StringP("tagName", "t", "", "Tag name")
+
+	tagCreateCmd.MarkFlagRequired("tagName")
 }
