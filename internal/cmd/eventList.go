@@ -5,7 +5,8 @@ import (
 	"kakeibodb/internal/presenter/console"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
-	"log"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -24,31 +25,38 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		tagNames, err := cmd.Flags().GetStringSlice("tags")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		fromStr, err := cmd.Flags().GetString("from")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		from, err := model.ParseDate(fromStr)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		toStr, err := cmd.Flags().GetString("to")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		to, err := model.ParseDate(toStr)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		lastDays, err := cmd.Flags().GetInt("last")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		all, err := cmd.Flags().GetBool("all")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		if lastDays >= 0 {
@@ -58,16 +66,21 @@ to quickly create a Cobra application.`,
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		eventRepo := mysql.NewEventRepository(db)
 		eventPresenter := console.NewEventPresenter()
 		eventPresentUC := usecase.NewEventPresentUseCase(eventRepo, eventPresenter)
 		if all {
-			eventPresentUC.PresentAll(tagNames, from, to)
+			err = eventPresentUC.PresentAll(tagNames, from, to)
 		} else {
-			eventPresentUC.PresentOutcomes(tagNames, from, to)
+			err = eventPresentUC.PresentOutcomes(tagNames, from, to)
+		}
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 	},
 }
