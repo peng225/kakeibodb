@@ -28,6 +28,9 @@ func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
 		events[i] = model.NewEventWithID(
 			id, *date, int32(money), strEvent[3], nil,
 		)
+		if len(strEvent) == 4 {
+			continue
+		}
 		for _, tag := range strings.Split(strEvent[4], ",") {
 			events[i].AddTag(model.Tag(tag))
 		}
@@ -63,12 +66,15 @@ func parsePatternList(t *testing.T, rawPatternList []byte) []*model.Pattern {
 	patterns := make([]*model.Pattern, len(strPatternLines))
 	for i, strPatternLine := range strPatternLines {
 		strPattern := strings.Fields(strPatternLine)
-		require.Len(t, strPattern, 3, strPatternLine)
+		require.GreaterOrEqual(t, len(strPattern), 2)
 		id, err := strconv.ParseInt(strPattern[0], 10, 64)
 		require.NoError(t, err)
 		patterns[i] = model.NewPattern(
 			id, strPattern[1], nil,
 		)
+		if len(strPattern) == 2 {
+			continue
+		}
 		for _, tag := range strings.Split(strPattern[2], ",") {
 			patterns[i].AddTag(model.Tag(tag))
 		}

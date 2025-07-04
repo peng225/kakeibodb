@@ -21,29 +21,31 @@ func NewPatternRepository(db *sql.DB) *PatternRepository {
 
 func (pr *PatternRepository) Create(key string) (int64, error) {
 	ctx := context.Background()
+	pwi, err := pr.getByKey(ctx, key)
+	if err == nil {
+		return pwi.GetID(), nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
 	res, err := pr.q.CreatePattern(ctx, sql.NullString{
 		String: key,
 		Valid:  true,
 	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to get pattern: %w", err)
+		return 0, fmt.Errorf("failed to create pattern: %w", err)
 	}
 	return res.LastInsertId()
 }
 
-func (pr *PatternRepository) Exist(key string) (bool, error) {
-	ctx := context.Background()
-	_, err := pr.q.GetPattern(ctx, sql.NullString{
+func (pr *PatternRepository) getByKey(ctx context.Context, key string) (*model.Pattern, error) {
+	res, err := pr.q.GetPattern(ctx, sql.NullString{
 		String: key,
 		Valid:  true,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to get pattern: %w", err)
+		return nil, fmt.Errorf("failed to get pattern: %w", err)
 	}
-	return true, nil
+	return model.NewPattern(res.ID, res.KeyString.String, nil), nil
 }
 
 func (pr *PatternRepository) Delete(id int64) error {

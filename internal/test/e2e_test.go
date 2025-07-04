@@ -202,6 +202,15 @@ func TestPattern(t *testing.T) {
 
 	_, stderr, err = runKakeiboDB("pattern", "create", "-k", "バナ")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("pattern", "create", "-k", "バナ")
+	require.NoError(t, err, string(stderr))
+	var stdout []byte
+	stdout, stderr, err = runKakeiboDB("pattern", "list")
+	require.NoError(t, err, string(stderr))
+	patterns := parsePatternList(t, stdout)
+	require.Len(t, patterns, 1)
+
 	_, stderr, err = runKakeiboDB("pattern", "addTag", "--patternID", "1",
 		"--tagNames", "fruit,yellow")
 	require.NoError(t, err, string(stderr))
@@ -242,9 +251,9 @@ func TestPattern(t *testing.T) {
 	// Delete a pattern.
 	_, stderr, err = runKakeiboDB("pattern", "delete", "--patternID", "1")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err := runKakeiboDB("pattern", "list")
+	stdout, stderr, err = runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
-	patterns := parsePatternList(t, stdout)
+	patterns = parsePatternList(t, stdout)
 	require.Empty(t, patterns)
 }
 
