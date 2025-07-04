@@ -124,21 +124,21 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 	events := make([]*model.EventWithID, 0)
 	for _, ewt := range res {
 		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
-		if !ewt.Tags.Valid {
+		if !ewt.Tagname.Valid {
 			events = append(events, e)
 			continue
 		}
-		tag := model.Tag(ewt.Tags.String)
+		tagName := ewt.Tagname.String
 		if len(events) == 0 {
-			e.AddTag(tag)
+			e.AddTag(tagName)
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
 			if e.GetID() == lastEvent.GetID() {
-				lastEvent.AddTag(tag)
+				lastEvent.AddTag(tagName)
 				events[len(events)-1] = lastEvent
 			} else {
-				e.AddTag(tag)
+				e.AddTag(tagName)
 				events = append(events, e)
 			}
 		}
@@ -147,11 +147,11 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 	return events, nil
 }
 
-func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error) {
-	sqlTags := make([]sql.NullString, len(tags))
-	for i, tag := range tags {
+func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error) {
+	sqlTags := make([]sql.NullString, len(tagNames))
+	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
-			String: tag.String(),
+			String: tagName,
 			Valid:  true,
 		}
 	}
@@ -165,7 +165,7 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 			Time:  *to,
 			Valid: true,
 		},
-		Tags: sqlTags,
+		Tagnames: sqlTags,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list outcome events with tags: %w", err)
@@ -174,17 +174,17 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 	events := make([]*model.EventWithID, 0)
 	for _, ewt := range res {
 		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
-		tag := model.Tag(ewt.Tags.String)
+		tagName := ewt.Tagname.String
 		if len(events) == 0 {
-			e.AddTag(tag)
+			e.AddTag(tagName)
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
 			if e.GetID() == lastEvent.GetID() {
-				lastEvent.AddTag(tag)
+				lastEvent.AddTag(tagName)
 				events[len(events)-1] = lastEvent
 			} else {
-				e.AddTag(tag)
+				e.AddTag(tagName)
 				events = append(events, e)
 			}
 		}
@@ -212,17 +212,17 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 	events := make([]*model.EventWithID, 0)
 	for _, ewt := range res {
 		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
-		tag := model.Tag(ewt.Tags.String)
+		tagName := ewt.Tagname.String
 		if len(events) == 0 {
-			e.AddTag(tag)
+			e.AddTag(tagName)
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
 			if e.GetID() == lastEvent.GetID() {
-				lastEvent.AddTag(tag)
+				lastEvent.AddTag(tagName)
 				events[len(events)-1] = lastEvent
 			} else {
-				e.AddTag(tag)
+				e.AddTag(tagName)
 				events = append(events, e)
 			}
 		}
@@ -231,11 +231,11 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 	return events, nil
 }
 
-func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error) {
-	sqlTags := make([]sql.NullString, len(tags))
-	for i, tag := range tags {
+func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error) {
+	sqlTags := make([]sql.NullString, len(tagNames))
+	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
-			String: tag.String(),
+			String: tagName,
 			Valid:  true,
 		}
 	}
@@ -249,7 +249,7 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 			Time:  *to,
 			Valid: true,
 		},
-		Tags: sqlTags,
+		Tagnames: sqlTags,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list events with tags: %w", err)
@@ -258,17 +258,17 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 	events := make([]*model.EventWithID, 0)
 	for _, ewt := range res {
 		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
-		tag := model.Tag(ewt.Tags.String)
+		tagName := ewt.Tagname.String
 		if len(events) == 0 {
-			e.AddTag(tag)
+			e.AddTag(tagName)
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
 			if e.GetID() == lastEvent.GetID() {
-				lastEvent.AddTag(tag)
+				lastEvent.AddTag(tagName)
 				events[len(events)-1] = lastEvent
 			} else {
-				e.AddTag(tag)
+				e.AddTag(tagName)
 				events = append(events, e)
 			}
 		}

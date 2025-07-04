@@ -16,9 +16,9 @@ type EventRepository interface {
 	Get(id int64) (*model.Event, error)
 	Delete(id int64) error
 	ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error)
-	ListOutcomesWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
+	ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error)
 	List(from, to *time.Time) ([]*model.EventWithID, error)
-	ListWithTags(tags []model.Tag, from, to *time.Time) ([]*model.EventWithID, error)
+	ListWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error)
 }
 
 type EventTagMapRepository interface {
@@ -201,16 +201,16 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEvent *model.Event, creditEv
 	return moneySum == relatedEvent.GetMoney()
 }
 
-func (eu *EventPresentUseCase) PresentOutcomes(tags []model.Tag, from, to *time.Time) {
+func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time.Time) {
 	var events []*model.EventWithID
 	var err error
-	if len(tags) == 0 {
+	if len(tagNames) == 0 {
 		events, err = eu.eventRepo.ListOutcomes(from, to)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		events, err = eu.eventRepo.ListOutcomesWithTags(tags, from, to)
+		events, err = eu.eventRepo.ListOutcomesWithTags(tagNames, from, to)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -219,16 +219,16 @@ func (eu *EventPresentUseCase) PresentOutcomes(tags []model.Tag, from, to *time.
 	eu.eventPresenter.Present(events)
 }
 
-func (eu *EventPresentUseCase) PresentAll(tags []model.Tag, from, to *time.Time) {
+func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to *time.Time) {
 	var events []*model.EventWithID
 	var err error
-	if len(tags) == 0 {
+	if len(tagNames) == 0 {
 		events, err = eu.eventRepo.List(from, to)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		events, err = eu.eventRepo.ListWithTags(tags, from, to)
+		events, err = eu.eventRepo.ListWithTags(tagNames, from, to)
 		if err != nil {
 			log.Fatal(err)
 		}

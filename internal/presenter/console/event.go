@@ -17,12 +17,8 @@ func (ep *EventPresenter) Present(events []*model.EventWithID) {
 	fmt.Printf("%s\t%s\t%s\t%s\t%s\n", "ID", "date      ", "money   ", "description                     ", "tags")
 	for _, e := range events {
 		tagsToPrint := "NONE"
-		if len(e.GetTags()) != 0 {
-			strTags := make([]string, len(e.GetTags()))
-			for i, tag := range e.GetTags() {
-				strTags[i] = tag.String()
-			}
-			tagsToPrint = strings.Join(strTags, ",")
+		if len(e.GetTagNames()) != 0 {
+			tagsToPrint = strings.Join(e.GetTagNames(), ",")
 		}
 		fmt.Printf("%v\t%v\t%8d\t%-32s\t%s\n",
 			e.GetID(), e.GetDate().Format("2006-01-02"), e.GetMoney(), e.GetDesc(), tagsToPrint)

@@ -3,7 +3,6 @@ package cmd
 import (
 	"log"
 
-	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
@@ -33,7 +32,7 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		tagRepo := mysql.NewTagRepository(db)
 		tagUC := usecase.NewTagUseCase(tagRepo)
-		tagUC.Create(model.Tag(tagName))
+		tagUC.Create(tagName)
 	},
 }
 

@@ -18,7 +18,7 @@ DELETE FROM event
 WHERE id = ?;
 
 -- name: ListOutcomeEvents :many
-SELECT event.*, tag.name AS tags FROM event
+SELECT event.*, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
@@ -27,29 +27,29 @@ WHERE
 ORDER BY event.id;
 
 -- name: ListOutcomeEventsWithTags :many
-SELECT event.*, tag.name AS tags FROM event
+SELECT event.*, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
-  (tag.name IN (sqlc.slice(tags))) AND
+  (tag.name IN (sqlc.slice(tagNames))) AND
   (event.money < 0)
 ORDER BY event.id;
 
 -- name: ListEvents :many
-SELECT event.*, tag.name AS tags FROM event
+SELECT event.*, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE event.dt BETWEEN ? AND ?
 ORDER BY event.id;
 
 -- name: ListEventsWithTags :many
-SELECT event.*, tag.name AS tags FROM event
+SELECT event.*, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
-  (tag.name IN (sqlc.slice(tags)))
+  (tag.name IN (sqlc.slice(tagNames)))
 ORDER BY event.id;
 
 -- name: CreateTag :execresult
@@ -77,7 +77,7 @@ DELETE FROM pattern
 WHERE id = ?;
 
 -- name: ListPatterns :many
-SELECT pattern.*, tag.name AS tags FROM pattern
+SELECT pattern.*, tag.name AS tagName FROM pattern
 LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
 LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
 ORDER BY pattern.id;

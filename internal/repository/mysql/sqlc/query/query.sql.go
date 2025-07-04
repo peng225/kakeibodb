@@ -172,7 +172,7 @@ func (q *Queries) GetTag(ctx context.Context, name sql.NullString) (Tag, error) 
 }
 
 const listEvents = `-- name: ListEvents :many
-SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE event.dt BETWEEN ? AND ?
@@ -189,7 +189,7 @@ type ListEventsRow struct {
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
-	Tags        sql.NullString
+	Tagname     sql.NullString
 }
 
 func (q *Queries) ListEvents(ctx context.Context, arg ListEventsParams) ([]ListEventsRow, error) {
@@ -206,7 +206,7 @@ func (q *Queries) ListEvents(ctx context.Context, arg ListEventsParams) ([]ListE
 			&i.Dt,
 			&i.Money,
 			&i.Description,
-			&i.Tags,
+			&i.Tagname,
 		); err != nil {
 			return nil, err
 		}
@@ -222,19 +222,19 @@ func (q *Queries) ListEvents(ctx context.Context, arg ListEventsParams) ([]ListE
 }
 
 const listEventsWithTags = `-- name: ListEventsWithTags :many
-SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
-  (tag.name IN (/*SLICE:tags*/?))
+  (tag.name IN (/*SLICE:tagnames*/?))
 ORDER BY event.id
 `
 
 type ListEventsWithTagsParams struct {
-	FromDt sql.NullTime
-	ToDt   sql.NullTime
-	Tags   []sql.NullString
+	FromDt   sql.NullTime
+	ToDt     sql.NullTime
+	Tagnames []sql.NullString
 }
 
 type ListEventsWithTagsRow struct {
@@ -242,7 +242,7 @@ type ListEventsWithTagsRow struct {
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
-	Tags        sql.NullString
+	Tagname     sql.NullString
 }
 
 func (q *Queries) ListEventsWithTags(ctx context.Context, arg ListEventsWithTagsParams) ([]ListEventsWithTagsRow, error) {
@@ -250,13 +250,13 @@ func (q *Queries) ListEventsWithTags(ctx context.Context, arg ListEventsWithTags
 	var queryParams []interface{}
 	queryParams = append(queryParams, arg.FromDt)
 	queryParams = append(queryParams, arg.ToDt)
-	if len(arg.Tags) > 0 {
-		for _, v := range arg.Tags {
+	if len(arg.Tagnames) > 0 {
+		for _, v := range arg.Tagnames {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:tags*/?", strings.Repeat(",?", len(arg.Tags))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:tagnames*/?", strings.Repeat(",?", len(arg.Tagnames))[1:], 1)
 	} else {
-		query = strings.Replace(query, "/*SLICE:tags*/?", "NULL", 1)
+		query = strings.Replace(query, "/*SLICE:tagnames*/?", "NULL", 1)
 	}
 	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
@@ -271,7 +271,7 @@ func (q *Queries) ListEventsWithTags(ctx context.Context, arg ListEventsWithTags
 			&i.Dt,
 			&i.Money,
 			&i.Description,
-			&i.Tags,
+			&i.Tagname,
 		); err != nil {
 			return nil, err
 		}
@@ -287,7 +287,7 @@ func (q *Queries) ListEventsWithTags(ctx context.Context, arg ListEventsWithTags
 }
 
 const listOutcomeEvents = `-- name: ListOutcomeEvents :many
-SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
@@ -306,7 +306,7 @@ type ListOutcomeEventsRow struct {
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
-	Tags        sql.NullString
+	Tagname     sql.NullString
 }
 
 func (q *Queries) ListOutcomeEvents(ctx context.Context, arg ListOutcomeEventsParams) ([]ListOutcomeEventsRow, error) {
@@ -323,7 +323,7 @@ func (q *Queries) ListOutcomeEvents(ctx context.Context, arg ListOutcomeEventsPa
 			&i.Dt,
 			&i.Money,
 			&i.Description,
-			&i.Tags,
+			&i.Tagname,
 		); err != nil {
 			return nil, err
 		}
@@ -339,20 +339,20 @@ func (q *Queries) ListOutcomeEvents(ctx context.Context, arg ListOutcomeEventsPa
 }
 
 const listOutcomeEventsWithTags = `-- name: ListOutcomeEventsWithTags :many
-SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM event
+SELECT event.id, event.dt, event.money, event.description, tag.name AS tagName FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
-  (tag.name IN (/*SLICE:tags*/?)) AND
+  (tag.name IN (/*SLICE:tagnames*/?)) AND
   (event.money < 0)
 ORDER BY event.id
 `
 
 type ListOutcomeEventsWithTagsParams struct {
-	FromDt sql.NullTime
-	ToDt   sql.NullTime
-	Tags   []sql.NullString
+	FromDt   sql.NullTime
+	ToDt     sql.NullTime
+	Tagnames []sql.NullString
 }
 
 type ListOutcomeEventsWithTagsRow struct {
@@ -360,7 +360,7 @@ type ListOutcomeEventsWithTagsRow struct {
 	Dt          sql.NullTime
 	Money       sql.NullInt32
 	Description sql.NullString
-	Tags        sql.NullString
+	Tagname     sql.NullString
 }
 
 func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcomeEventsWithTagsParams) ([]ListOutcomeEventsWithTagsRow, error) {
@@ -368,13 +368,13 @@ func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcome
 	var queryParams []interface{}
 	queryParams = append(queryParams, arg.FromDt)
 	queryParams = append(queryParams, arg.ToDt)
-	if len(arg.Tags) > 0 {
-		for _, v := range arg.Tags {
+	if len(arg.Tagnames) > 0 {
+		for _, v := range arg.Tagnames {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:tags*/?", strings.Repeat(",?", len(arg.Tags))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:tagnames*/?", strings.Repeat(",?", len(arg.Tagnames))[1:], 1)
 	} else {
-		query = strings.Replace(query, "/*SLICE:tags*/?", "NULL", 1)
+		query = strings.Replace(query, "/*SLICE:tagnames*/?", "NULL", 1)
 	}
 	rows, err := q.db.QueryContext(ctx, query, queryParams...)
 	if err != nil {
@@ -389,7 +389,7 @@ func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcome
 			&i.Dt,
 			&i.Money,
 			&i.Description,
-			&i.Tags,
+			&i.Tagname,
 		); err != nil {
 			return nil, err
 		}
@@ -405,7 +405,7 @@ func (q *Queries) ListOutcomeEventsWithTags(ctx context.Context, arg ListOutcome
 }
 
 const listPatterns = `-- name: ListPatterns :many
-SELECT pattern.id, pattern.key_string, tag.name AS tags FROM pattern
+SELECT pattern.id, pattern.key_string, tag.name AS tagName FROM pattern
 LEFT OUTER JOIN pattern_to_tag ON pattern.id = pattern_to_tag.pattern_id
 LEFT OUTER JOIN tag ON tag.id = pattern_to_tag.tag_id
 ORDER BY pattern.id
@@ -414,7 +414,7 @@ ORDER BY pattern.id
 type ListPatternsRow struct {
 	ID        int64
 	KeyString sql.NullString
-	Tags      sql.NullString
+	Tagname   sql.NullString
 }
 
 func (q *Queries) ListPatterns(ctx context.Context) ([]ListPatternsRow, error) {
@@ -426,7 +426,7 @@ func (q *Queries) ListPatterns(ctx context.Context) ([]ListPatternsRow, error) {
 	var items []ListPatternsRow
 	for rows.Next() {
 		var i ListPatternsRow
-		if err := rows.Scan(&i.ID, &i.KeyString, &i.Tags); err != nil {
+		if err := rows.Scan(&i.ID, &i.KeyString, &i.Tagname); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

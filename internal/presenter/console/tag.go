@@ -12,9 +12,9 @@ func NewTagPresenter() *TagPresenter {
 	return &TagPresenter{}
 }
 
-func (tp *TagPresenter) Present(tags []*model.TagWithID) {
+func (tp *TagPresenter) Present(tags []*model.Tag) {
 	fmt.Printf("%s\t%s\n", "ID", "name")
 	for _, t := range tags {
-		fmt.Printf("%2d\t%v\n", t.GetID(), t.String())
+		fmt.Printf("%2d\t%v\n", t.GetID(), t.GetName())
 	}
 }

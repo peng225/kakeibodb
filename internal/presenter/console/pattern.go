@@ -17,12 +17,8 @@ func (pp *PatternPresenter) Present(patterns []*model.Pattern) {
 	fmt.Printf("%s\t%s\t%s\n", "ID", "key                             ", "tags")
 	for _, p := range patterns {
 		tagsToPrint := "NONE"
-		if len(p.GetTags()) != 0 {
-			strTags := make([]string, len(p.GetTags()))
-			for i, tag := range p.GetTags() {
-				strTags[i] = tag.String()
-			}
-			tagsToPrint = strings.Join(strTags, ",")
+		if len(p.GetTagNames()) != 0 {
+			tagsToPrint = strings.Join(p.GetTagNames(), ",")
 		}
 		fmt.Printf("%v\t%-32s\t%s\n",
 			p.GetID(), p.GetKey(), tagsToPrint)

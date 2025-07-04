@@ -6,13 +6,13 @@ import (
 )
 
 type TagRepository interface {
-	Create(tag model.Tag) (int64, error)
+	Create(tag string) (int64, error)
 	Delete(id int64) error
-	List() ([]*model.TagWithID, error)
+	List() ([]*model.Tag, error)
 }
 
 type TagPresenter interface {
-	Present(tags []*model.TagWithID)
+	Present(tags []*model.Tag)
 }
 
 type TagUseCase struct {
@@ -37,8 +37,8 @@ func NewTagPresentUseCase(tagRepo TagRepository, tagPresenter TagPresenter) *Tag
 	}
 }
 
-func (tu *TagUseCase) Create(tag model.Tag) {
-	_, err := tu.tagRepo.Create(tag)
+func (tu *TagUseCase) Create(tagName string) {
+	_, err := tu.tagRepo.Create(tagName)
 	if err != nil {
 		log.Fatal(err)
 	}

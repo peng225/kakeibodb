@@ -10,10 +10,10 @@ const (
 )
 
 type Event struct {
-	date  time.Time
-	money int32
-	desc  string
-	tags  []Tag
+	date     time.Time
+	money    int32
+	desc     string
+	tagNames []string
 }
 
 type EventWithID struct {
@@ -38,15 +38,15 @@ func ParseDate(ds string) (*time.Time, error) {
 }
 
 func NewEvent(date time.Time, money int32,
-	desc string, tags []Tag) *Event {
+	desc string, tagNames []string) *Event {
 	if len([]rune(desc)) >= eventDescLength {
 		desc = string([]rune(desc)[0:eventDescLength])
 	}
 	return &Event{
-		date:  date,
-		money: money,
-		desc:  desc,
-		tags:  tags,
+		date:     date,
+		money:    money,
+		desc:     desc,
+		tagNames: tagNames,
 	}
 }
 
@@ -62,26 +62,26 @@ func (e *Event) GetDesc() string {
 	return e.desc
 }
 
-func (e *Event) GetTags() []Tag {
-	ret := make([]Tag, len(e.tags))
-	copy(ret, e.tags)
+func (e *Event) GetTagNames() []string {
+	ret := make([]string, len(e.tagNames))
+	copy(ret, e.tagNames)
 	return ret
 }
 
-func (e *Event) AddTag(tag Tag) {
-	if !slices.Contains(e.tags, tag) {
-		e.tags = append(e.tags, tag)
+func (e *Event) AddTag(tagName string) {
+	if !slices.Contains(e.tagNames, tagName) {
+		e.tagNames = append(e.tagNames, tagName)
 	}
 }
 
 func NewEventWithID(id int64, date time.Time, money int32,
-	desc string, tags []Tag) *EventWithID {
+	desc string, tagNames []string) *EventWithID {
 	if len([]rune(desc)) >= eventDescLength {
 		desc = string([]rune(desc)[0:eventDescLength])
 	}
 	return &EventWithID{
 		id:    id,
-		Event: *NewEvent(date, money, desc, tags),
+		Event: *NewEvent(date, money, desc, tagNames),
 	}
 }
 
