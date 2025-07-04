@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/sqlc/query"
+	"slices"
 	"time"
 )
 
@@ -86,6 +87,17 @@ func (er *EventRepository) Delete(id int64) error {
 	return nil
 }
 
+func sortEventsByDate(events []*model.EventWithID) {
+	slices.SortFunc(events, func(a, b *model.EventWithID) int {
+		if a.GetDate().Before(b.GetDate()) {
+			return -1
+		} else if a.GetDate().After(b.GetDate()) {
+			return 1
+		}
+		return 0
+	})
+}
+
 func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error) {
 	ctx := context.Background()
 	res, err := er.q.ListOutcomeEvents(ctx, query.ListOutcomeEventsParams{
@@ -115,9 +127,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -126,6 +136,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -162,9 +173,7 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -173,6 +182,7 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -201,9 +211,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -212,6 +220,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -248,9 +257,7 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -259,5 +266,6 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
