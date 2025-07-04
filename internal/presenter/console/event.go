@@ -13,7 +13,7 @@ func NewEventPresenter() *EventPresenter {
 	return &EventPresenter{}
 }
 
-func (ep *EventPresenter) Present(events []*model.EventWithID) {
+func (ep *EventPresenter) Present(events []*model.Event) {
 	fmt.Printf("%s\t%s\t%s\t%s\t%s\n", "ID", "date      ", "money   ", "description                     ", "tags")
 	for _, e := range events {
 		tagsToPrint := "NONE"

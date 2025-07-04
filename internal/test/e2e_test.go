@@ -48,7 +48,7 @@ func TestEvent(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
-	seq := func(yield func(*model.EventWithID) bool) {
+	seq := func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			if e.GetDesc() == "イチゴ" && !yield(e) {
 				return
@@ -57,7 +57,7 @@ func TestEvent(t *testing.T) {
 	}
 	require.Len(t, slices.Collect(seq), 1)
 
-	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+	i := slices.IndexFunc(events, func(e *model.Event) bool {
 		return e.GetDesc() == "クレジットカード"
 	})
 	require.NotEqual(t, -1, i)
@@ -69,21 +69,21 @@ func TestEvent(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events = parseEventList(t, stdout)
-	i = slices.IndexFunc(events, func(e *model.EventWithID) bool {
+	i = slices.IndexFunc(events, func(e *model.Event) bool {
 		return e.GetDesc() == "クレジットカード"
 	})
 	require.Equal(t, -1, i)
-	i = slices.IndexFunc(events, func(e *model.EventWithID) bool {
+	i = slices.IndexFunc(events, func(e *model.Event) bool {
 		return e.GetDesc() == "チョコ"
 	})
 	require.NotEqual(t, -1, i)
 }
 
-func getEventsWithAllTags(t *testing.T, tags ...string) []*model.EventWithID {
+func getEventsWithAllTags(t *testing.T, tags ...string) []*model.Event {
 	stdout, stderr, err := runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
-	seq := func(yield func(*model.EventWithID) bool) {
+	seq := func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			for _, tagName := range e.GetTagNames() {
 				if !slices.ContainsFunc(tags, func(t string) bool {
@@ -138,7 +138,7 @@ func TestTag(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
-	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+	i := slices.IndexFunc(events, func(e *model.Event) bool {
 		for _, tagName := range e.GetTagNames() {
 			if tagName == "foo" || tagName == "bar" {
 				return true
@@ -266,7 +266,7 @@ func TestSplit(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
-	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
+	i := slices.IndexFunc(events, func(e *model.Event) bool {
 		return e.GetDesc() == "クレジットカード"
 	})
 	require.NotEqual(t, -1, i)
@@ -282,7 +282,7 @@ func TestSplit(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events = parseEventList(t, stdout)
-	seq := func(yield func(*model.EventWithID) bool) {
+	seq := func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
 				return
@@ -304,7 +304,7 @@ func TestSplit(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events = parseEventList(t, stdout)
-	seq = func(yield func(*model.EventWithID) bool) {
+	seq = func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
 				return
@@ -327,7 +327,7 @@ func TestSplit(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events = parseEventList(t, stdout)
-	seq = func(yield func(*model.EventWithID) bool) {
+	seq = func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			if strings.Contains(e.GetDesc(), "飴") && !yield(e) {
 				return
