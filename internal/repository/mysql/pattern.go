@@ -66,17 +66,17 @@ func (pr *PatternRepository) List() ([]*model.Pattern, error) {
 	patterns := make([]*model.Pattern, 0)
 	for _, pwt := range res {
 		p := model.NewPattern(pwt.ID, pwt.KeyString.String, nil)
-		tag := model.Tag(pwt.Tags.String)
+		tagName := pwt.Tagname.String
 		if len(patterns) == 0 {
-			p.AddTag(tag)
+			p.AddTag(tagName)
 			patterns = append(patterns, p)
 		} else {
 			lastPattern := patterns[len(patterns)-1]
 			if p.GetKey() == lastPattern.GetKey() {
-				lastPattern.AddTag(tag)
+				lastPattern.AddTag(tagName)
 				patterns[len(patterns)-1] = lastPattern
 			} else {
-				p.AddTag(tag)
+				p.AddTag(tagName)
 				patterns = append(patterns, p)
 			}
 		}

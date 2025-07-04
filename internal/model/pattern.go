@@ -3,16 +3,16 @@ package model
 import "slices"
 
 type Pattern struct {
-	id   int64
-	key  string
-	tags []Tag
+	id       int64
+	key      string
+	tagNames []string
 }
 
-func NewPattern(id int64, key string, tags []Tag) *Pattern {
+func NewPattern(id int64, key string, tagNames []string) *Pattern {
 	return &Pattern{
-		id:   id,
-		key:  key,
-		tags: tags,
+		id:       id,
+		key:      key,
+		tagNames: tagNames,
 	}
 }
 
@@ -20,15 +20,15 @@ func (p *Pattern) GetKey() string {
 	return p.key
 }
 
-func (p *Pattern) GetTags() []Tag {
-	ret := make([]Tag, len(p.tags))
-	copy(ret, p.tags)
+func (p *Pattern) GetTagNames() []string {
+	ret := make([]string, len(p.tagNames))
+	copy(ret, p.tagNames)
 	return ret
 }
 
-func (p *Pattern) AddTag(tag Tag) {
-	if !slices.Contains(p.tags, tag) {
-		p.tags = append(p.tags, tag)
+func (p *Pattern) AddTag(tagName string) {
+	if !slices.Contains(p.tagNames, tagName) {
+		p.tagNames = append(p.tagNames, tagName)
 	}
 }
 

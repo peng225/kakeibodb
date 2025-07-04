@@ -85,9 +85,9 @@ func getEventsWithAllTags(t *testing.T, tags ...string) []*model.EventWithID {
 	events := parseEventList(t, stdout)
 	seq := func(yield func(*model.EventWithID) bool) {
 		for _, e := range events {
-			for _, tag := range e.GetTags() {
+			for _, tagName := range e.GetTagNames() {
 				if !slices.ContainsFunc(tags, func(t string) bool {
-					return t == tag.String()
+					return t == tagName
 				}) {
 					return
 				}
@@ -116,8 +116,8 @@ func TestTag(t *testing.T) {
 	stdout, stderr, err = runKakeiboDB("tag", "list")
 	require.NoError(t, err, string(stderr))
 	tagList := parseTagList(t, stdout)
-	require.Equal(t, "foo", tagList[0].String())
-	require.Equal(t, "bar", tagList[1].String())
+	require.Equal(t, "foo", tagList[0].GetName())
+	require.Equal(t, "bar", tagList[1].GetName())
 	_, stderr, err = runKakeiboDB("event", "addTag", "--eventID", "1", "--tagNames", "foo,bar")
 	require.NoError(t, err, string(stderr))
 	// Idempotency check.
@@ -139,8 +139,8 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
 	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
-		for _, tag := range e.GetTags() {
-			if tag.String() == "foo" || tag.String() == "bar" {
+		for _, tagName := range e.GetTagNames() {
+			if tagName == "foo" || tagName == "bar" {
 				return true
 			}
 		}
@@ -169,15 +169,15 @@ func TestUserEnv(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 }
 
-func getPatternsWithAllTags(t *testing.T, tags ...string) []*model.Pattern {
+func getPatternsWithAllTags(t *testing.T, tagNames ...string) []*model.Pattern {
 	stdout, stderr, err := runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
 	patterns := parsePatternList(t, stdout)
 	seq := func(yield func(*model.Pattern) bool) {
 		for _, p := range patterns {
-			for _, tag := range p.GetTags() {
-				if !slices.ContainsFunc(tags, func(t string) bool {
-					return t == tag.String()
+			for _, tagName := range p.GetTagNames() {
+				if !slices.ContainsFunc(tagNames, func(t string) bool {
+					return t == tagName
 				}) {
 					return
 				}

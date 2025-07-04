@@ -31,27 +31,27 @@ func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
 		if len(strEvent) == 4 {
 			continue
 		}
-		for _, tag := range strings.Split(strEvent[4], ",") {
-			events[i].AddTag(model.Tag(tag))
+		for _, tagName := range strings.Split(strEvent[4], ",") {
+			events[i].AddTag(tagName)
 		}
 	}
 	return events
 }
 
-func parseTagList(t *testing.T, rawTagList []byte) []*model.TagWithID {
+func parseTagList(t *testing.T, rawTagList []byte) []*model.Tag {
 	t.Helper()
 	strTagLines := strings.Split(strings.TrimSpace(string(rawTagList)), "\n")
 	require.LessOrEqual(t, 1, len(strTagLines))
 	// Skip header
 	strTagLines = strTagLines[1:]
-	tags := make([]*model.TagWithID, len(strTagLines))
+	tags := make([]*model.Tag, len(strTagLines))
 	for i, strTagLine := range strTagLines {
 		strTag := strings.Fields(strTagLine)
 		require.Len(t, strTag, 2, strTagLine)
 		id, err := strconv.ParseInt(strTag[0], 10, 64)
 		require.NoError(t, err)
-		tags[i] = model.NewTagWithID(
-			id, model.Tag(strTag[1]),
+		tags[i] = model.NewTag(
+			id, strTag[1],
 		)
 	}
 	return tags
@@ -75,8 +75,8 @@ func parsePatternList(t *testing.T, rawPatternList []byte) []*model.Pattern {
 		if len(strPattern) == 2 {
 			continue
 		}
-		for _, tag := range strings.Split(strPattern[2], ",") {
-			patterns[i].AddTag(model.Tag(tag))
+		for _, tagName := range strings.Split(strPattern[2], ",") {
+			patterns[i].AddTag(tagName)
 		}
 	}
 	return patterns

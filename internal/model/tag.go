@@ -1,27 +1,21 @@
 package model
 
-type Tag string
-
-type TagWithID struct {
-	tag Tag
-	id  int64
+type Tag struct {
+	id   int64
+	name string
 }
 
-func (t *Tag) String() string {
-	return string(*t)
-}
-
-func NewTagWithID(id int64, tag Tag) *TagWithID {
-	return &TagWithID{
-		tag: tag,
-		id:  id,
+func NewTag(id int64, name string) *Tag {
+	return &Tag{
+		id:   id,
+		name: name,
 	}
 }
 
-func (t *TagWithID) GetID() int64 {
-	return t.id
+func (t *Tag) GetName() string {
+	return t.name
 }
 
-func (t *TagWithID) String() string {
-	return t.tag.String()
+func (t *Tag) GetID() int64 {
+	return t.id
 }
