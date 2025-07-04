@@ -7,7 +7,6 @@ import (
 
 type PatternRepository interface {
 	Create(key string) (int64, error)
-	Exist(key string) (bool, error)
 	Delete(id int64) error
 	List() ([]*model.Pattern, error)
 }
@@ -54,15 +53,7 @@ func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsec
 }
 
 func (pu *PatternUseCase) Create(key string) {
-	exist, err := pu.patternRepo.Exist(key)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if exist {
-		return
-	}
-
-	_, err = pu.patternRepo.Create(key)
+	_, err := pu.patternRepo.Create(key)
 	if err != nil {
 		log.Fatal(err)
 	}

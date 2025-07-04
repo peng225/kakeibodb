@@ -24,7 +24,7 @@ LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
   (event.money < 0)
-ORDER BY event.dt;
+ORDER BY event.id;
 
 -- name: ListOutcomeEventsWithTags :many
 SELECT event.*, tag.name AS tags FROM event
@@ -34,14 +34,14 @@ WHERE
   (event.dt BETWEEN ? AND ?) AND
   (tag.name IN (sqlc.slice(tags))) AND
   (event.money < 0)
-ORDER BY event.dt;
+ORDER BY event.id;
 
 -- name: ListEvents :many
 SELECT event.*, tag.name AS tags FROM event
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE event.dt BETWEEN ? AND ?
-ORDER BY event.dt;
+ORDER BY event.id;
 
 -- name: ListEventsWithTags :many
 SELECT event.*, tag.name AS tags FROM event
@@ -50,7 +50,7 @@ LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
   (tag.name IN (sqlc.slice(tags)))
-ORDER BY event.dt;
+ORDER BY event.id;
 
 -- name: CreateTag :execresult
 INSERT INTO tag (name) VALUES (?);

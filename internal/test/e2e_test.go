@@ -41,10 +41,22 @@ func TestEvent(t *testing.T) {
 	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("event", "load", "-d", "event")
+	require.NoError(t, err, string(stderr))
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
+	seq := func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			if e.GetDesc() == "イチゴ" && !yield(e) {
+				return
+			}
+		}
+	}
+	require.Len(t, slices.Collect(seq), 1)
+
 	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
 		return e.GetDesc() == "クレジットカード"
 	})
@@ -95,6 +107,9 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "foo")
 	require.NoError(t, err, string(stderr))
+	_, stderr, err = runKakeiboDB("tag", "create", "-t", "bar")
+	require.NoError(t, err, string(stderr))
+	// Idempotency check.
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "bar")
 	require.NoError(t, err, string(stderr))
 	var stdout []byte
@@ -187,6 +202,15 @@ func TestPattern(t *testing.T) {
 
 	_, stderr, err = runKakeiboDB("pattern", "create", "-k", "バナ")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("pattern", "create", "-k", "バナ")
+	require.NoError(t, err, string(stderr))
+	var stdout []byte
+	stdout, stderr, err = runKakeiboDB("pattern", "list")
+	require.NoError(t, err, string(stderr))
+	patterns := parsePatternList(t, stdout)
+	require.Len(t, patterns, 1)
+
 	_, stderr, err = runKakeiboDB("pattern", "addTag", "--patternID", "1",
 		"--tagNames", "fruit,yellow")
 	require.NoError(t, err, string(stderr))
@@ -227,9 +251,9 @@ func TestPattern(t *testing.T) {
 	// Delete a pattern.
 	_, stderr, err = runKakeiboDB("pattern", "delete", "--patternID", "1")
 	require.NoError(t, err, string(stderr))
-	stdout, stderr, err := runKakeiboDB("pattern", "list")
+	stdout, stderr, err = runKakeiboDB("pattern", "list")
 	require.NoError(t, err, string(stderr))
-	patterns := parsePatternList(t, stdout)
+	patterns = parsePatternList(t, stdout)
 	require.Empty(t, patterns)
 }
 

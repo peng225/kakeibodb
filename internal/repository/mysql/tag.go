@@ -21,6 +21,13 @@ func NewTagRepository(db *sql.DB) *TagRepository {
 
 func (tr *TagRepository) Create(tag model.Tag) (int64, error) {
 	ctx := context.Background()
+	twi, err := tr.get(ctx, tag)
+	if err == nil {
+		return twi.GetID(), nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
 	res, err := tr.q.CreateTag(ctx, sql.NullString{
 		String: tag.String(),
 		Valid:  true,
@@ -31,19 +38,15 @@ func (tr *TagRepository) Create(tag model.Tag) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (tr *TagRepository) Exist(tag model.Tag) (bool, error) {
-	ctx := context.Background()
-	_, err := tr.q.GetTag(ctx, sql.NullString{
+func (tr *TagRepository) get(ctx context.Context, tag model.Tag) (*model.TagWithID, error) {
+	ret, err := tr.q.GetTag(ctx, sql.NullString{
 		String: tag.String(),
 		Valid:  true,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
+		return nil, fmt.Errorf("failed to get tag: %w", err)
 	}
-	return true, nil
+	return model.NewTagWithID(ret.ID, model.Tag(ret.Name.String)), nil
 }
 
 func (tr *TagRepository) Delete(id int64) error {

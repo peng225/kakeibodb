@@ -7,7 +7,6 @@ import (
 
 type TagRepository interface {
 	Create(tag model.Tag) (int64, error)
-	Exist(tag model.Tag) (bool, error)
 	Delete(id int64) error
 	List() ([]*model.TagWithID, error)
 }
@@ -39,16 +38,7 @@ func NewTagPresentUseCase(tagRepo TagRepository, tagPresenter TagPresenter) *Tag
 }
 
 func (tu *TagUseCase) Create(tag model.Tag) {
-	exist, err := tu.tagRepo.Exist(tag)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// FIXME: Need to resolve TOCTOU by using transaction.
-	if exist {
-		return
-	}
-
-	_, err = tu.tagRepo.Create(tag)
+	_, err := tu.tagRepo.Create(tag)
 	if err != nil {
 		log.Fatal(err)
 	}

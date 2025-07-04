@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/sqlc/query"
+	"slices"
 	"time"
 )
 
@@ -22,6 +23,13 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 
 func (er *EventRepository) Create(event *model.Event) (int64, error) {
 	ctx := context.Background()
+	ewi, err := er.getByContent(ctx, event)
+	if err == nil {
+		return ewi.GetID(), nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
 	res, err := er.q.CreateEvent(ctx, query.CreateEventParams{
 		Dt: sql.NullTime{
 			Time:  event.GetDate(),
@@ -43,9 +51,8 @@ func (er *EventRepository) Create(event *model.Event) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (er *EventRepository) Exist(event *model.Event) (bool, error) {
-	ctx := context.Background()
-	_, err := er.q.GetEvent(ctx, query.GetEventParams{
+func (er *EventRepository) getByContent(ctx context.Context, event *model.Event) (*model.EventWithID, error) {
+	res, err := er.q.GetEvent(ctx, query.GetEventParams{
 		Dt: sql.NullTime{
 			Time:  event.GetDate(),
 			Valid: true,
@@ -60,12 +67,13 @@ func (er *EventRepository) Exist(event *model.Event) (bool, error) {
 		},
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
+		return nil, fmt.Errorf("failed to get event: %w", err)
 	}
-	return true, nil
+
+	return model.NewEventWithID(
+		res.ID, res.Dt.Time, res.Money.Int32,
+		res.Description.String, nil,
+	), nil
 }
 
 func (er *EventRepository) Get(id int64) (*model.Event, error) {
@@ -84,6 +92,17 @@ func (er *EventRepository) Delete(id int64) error {
 		return fmt.Errorf("failed to delete event by ID: %w", err)
 	}
 	return nil
+}
+
+func sortEventsByDate(events []*model.EventWithID) {
+	slices.SortFunc(events, func(a, b *model.EventWithID) int {
+		if a.GetDate().Before(b.GetDate()) {
+			return -1
+		} else if a.GetDate().After(b.GetDate()) {
+			return 1
+		}
+		return 0
+	})
 }
 
 func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error) {
@@ -115,9 +134,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -126,6 +143,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -162,9 +180,7 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -173,6 +189,7 @@ func (er *EventRepository) ListOutcomesWithTags(tags []model.Tag, from, to *time
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -201,9 +218,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -212,6 +227,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }
 
@@ -248,9 +264,7 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 			events = append(events, e)
 		} else {
 			lastEvent := events[len(events)-1]
-			if e.GetDate().Equal(lastEvent.GetDate()) &&
-				e.GetMoney() == lastEvent.GetMoney() &&
-				e.GetDesc() == lastEvent.GetDesc() {
+			if e.GetID() == lastEvent.GetID() {
 				lastEvent.AddTag(tag)
 				events[len(events)-1] = lastEvent
 			} else {
@@ -259,5 +273,6 @@ func (er *EventRepository) ListWithTags(tags []model.Tag, from, to *time.Time) (
 			}
 		}
 	}
+	sortEventsByDate(events)
 	return events, nil
 }

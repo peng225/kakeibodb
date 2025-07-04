@@ -176,7 +176,7 @@ SELECT event.id, event.dt, event.money, event.description, tag.name AS tags FROM
 LEFT OUTER JOIN event_to_tag ON event.id = event_to_tag.event_id
 LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE event.dt BETWEEN ? AND ?
-ORDER BY event.dt
+ORDER BY event.id
 `
 
 type ListEventsParams struct {
@@ -228,7 +228,7 @@ LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
   (tag.name IN (/*SLICE:tags*/?))
-ORDER BY event.dt
+ORDER BY event.id
 `
 
 type ListEventsWithTagsParams struct {
@@ -293,7 +293,7 @@ LEFT OUTER JOIN tag ON tag.id = event_to_tag.tag_id
 WHERE
   (event.dt BETWEEN ? AND ?) AND
   (event.money < 0)
-ORDER BY event.dt
+ORDER BY event.id
 `
 
 type ListOutcomeEventsParams struct {
@@ -346,7 +346,7 @@ WHERE
   (event.dt BETWEEN ? AND ?) AND
   (tag.name IN (/*SLICE:tags*/?)) AND
   (event.money < 0)
-ORDER BY event.dt
+ORDER BY event.id
 `
 
 type ListOutcomeEventsWithTagsParams struct {
