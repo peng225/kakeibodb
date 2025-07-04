@@ -4,7 +4,8 @@ import (
 	"kakeibodb/internal/presenter/console"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -22,13 +23,18 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		tagRepo := mysql.NewTagRepository(db)
 		tagPresenter := console.NewTagPresenter()
 		tagUC := usecase.NewTagPresentUseCase(tagRepo, tagPresenter)
-		tagUC.List()
+		err = tagUC.List()
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 

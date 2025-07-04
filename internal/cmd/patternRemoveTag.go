@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"log"
-
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
+	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -22,21 +22,28 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		patternID, err := cmd.Flags().GetInt64("patternID")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		tagName, err := cmd.Flags().GetString("tagName")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		ptmRepo := mysql.NewPatternTagMapRepository(db)
 		ptmUC := usecase.NewPatternTagMapUseCase(ptmRepo)
-		ptmUC.RemoveTag(patternID, tagName)
+		err = ptmUC.RemoveTag(patternID, tagName)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 

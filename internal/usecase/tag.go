@@ -1,8 +1,8 @@
 package usecase
 
 import (
+	"fmt"
 	"kakeibodb/internal/model"
-	"log"
 )
 
 type TagRepository interface {
@@ -37,25 +37,28 @@ func NewTagPresentUseCase(tagRepo TagRepository, tagPresenter TagPresenter) *Tag
 	}
 }
 
-func (tu *TagUseCase) Create(tagName string) {
+func (tu *TagUseCase) Create(tagName string) error {
 	_, err := tu.tagRepo.Create(tagName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create tag: %w", err)
 	}
+	return nil
 }
 
-func (tu *TagUseCase) Delete(id int64) {
+func (tu *TagUseCase) Delete(id int64) error {
 	err := tu.tagRepo.Delete(id)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to delete tag: %w", err)
 	}
+	return err
 }
 
-func (tu *TagPresentUseCase) List() {
+func (tu *TagPresentUseCase) List() error {
 	tags, err := tu.tagRepo.List()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to list tags: %w", err)
 	}
 
 	tu.tagPresenter.Present(tags)
+	return nil
 }

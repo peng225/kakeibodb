@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
@@ -22,17 +23,23 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		tagID, err := cmd.Flags().GetInt64("tagID")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		tagRepo := mysql.NewTagRepository(db)
 		tagUC := usecase.NewTagUseCase(tagRepo)
-		tagUC.Delete(tagID)
+		err = tagUC.Delete(tagID)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 

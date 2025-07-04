@@ -1,8 +1,8 @@
 package usecase
 
 import (
+	"fmt"
 	"kakeibodb/internal/model"
-	"log"
 )
 
 type PatternRepository interface {
@@ -52,41 +52,46 @@ func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsec
 	}
 }
 
-func (pu *PatternUseCase) Create(key string) {
+func (pu *PatternUseCase) Create(key string) error {
 	_, err := pu.patternRepo.Create(key)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to create pattern: %w", err)
 	}
+	return nil
 }
 
-func (pu *PatternUseCase) Delete(id int64) {
+func (pu *PatternUseCase) Delete(id int64) error {
 	err := pu.patternRepo.Delete(id)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to delete pattern: %w", err)
 	}
+	return nil
 }
 
-func (pu *PatternPresentUseCase) List() {
+func (pu *PatternPresentUseCase) List() error {
 	tags, err := pu.patternRepo.List()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to list patterns: %w", err)
 	}
 
 	pu.patternPresenter.Present(tags)
+	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) AddTag(patternID int64, tagNames []string) {
+func (ptmu *PatternTagMapUsecase) AddTag(patternID int64, tagNames []string) error {
 	for _, tagName := range tagNames {
 		err := ptmu.ptmRepo.Map(patternID, tagName)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to add tag: %w", err)
 		}
 	}
+	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) RemoveTag(patternID int64, tagName string) {
+func (ptmu *PatternTagMapUsecase) RemoveTag(patternID int64, tagName string) error {
 	err := ptmu.ptmRepo.Unmap(patternID, tagName)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to remove tag: %w", err)
 	}
+	return nil
 }

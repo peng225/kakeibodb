@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
@@ -22,21 +23,28 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		eventID, err := cmd.Flags().GetInt64("eventID")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		tagNames, err := cmd.Flags().GetStringSlice("tagNames")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		etmUC := usecase.NewEventTagMapUseCase(etmRepo)
-		etmUC.AddTag(eventID, tagNames)
+		err = etmUC.AddTag(eventID, tagNames)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 

@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
@@ -22,24 +23,29 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		file, err := cmd.Flags().GetString("file")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		dir, err := cmd.Flags().GetString("dir")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		credit, err := cmd.Flags().GetBool("credit")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		parentEventID, err := cmd.Flags().GetInt64("parentEventID")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		db, err := OpenDB(dbName, dbPort, user)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		defer db.Close()
 		eventRepo := mysql.NewEventRepository(db)
@@ -47,18 +53,24 @@ to quickly create a Cobra application.`,
 
 		if credit {
 			if file == "" {
-				log.Fatal("file path must be specified for credit mode.")
+				slog.Error("File path must be specified for credit mode.")
+				os.Exit(1)
 			}
 			if parentEventID < 0 {
-				log.Fatalf("invalid parentEventID %d\n", parentEventID)
+				slog.Error("Invalid argument.", "parentEventID", parentEventID)
+				os.Exit(1)
 			}
-			eventUC.LoadCreditFromFile(file, parentEventID)
+			err = eventUC.LoadCreditFromFile(file, parentEventID)
 		} else {
 			if file != "" {
-				eventUC.LoadFromFile(file)
+				err = eventUC.LoadFromFile(file)
 			} else {
-				eventUC.LoadFromDir(dir)
+				err = eventUC.LoadFromDir(dir)
 			}
+		}
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 	},
 }
