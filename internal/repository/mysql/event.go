@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/sqlc/query"
+	"kakeibodb/internal/usecase"
 	"slices"
 	"time"
 )
@@ -21,48 +22,47 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 	}
 }
 
-func (er *EventRepository) Create(event *model.Event) (int64, error) {
+func (er *EventRepository) Create(req *usecase.EventCreateRequest) (int64, error) {
 	ctx := context.Background()
-	ewi, err := er.getByContent(ctx, event)
+	event, err := er.getByContent(ctx, req.Date, req.Money, req.Desc)
 	if err == nil {
-		return ewi.GetID(), nil
+		return event.GetID(), nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
 
 	res, err := er.q.CreateEvent(ctx, query.CreateEventParams{
 		Dt: sql.NullTime{
-			Time:  event.GetDate(),
+			Time:  req.Date,
 			Valid: true,
 		},
 		Money: sql.NullInt32{
-			Int32: event.GetMoney(),
+			Int32: req.Money,
 			Valid: true,
 		},
 		Description: sql.NullString{
-			String: event.GetDesc(),
+			String: req.Desc,
 			Valid:  true,
 		},
 	})
 	if err != nil {
 		return 0, err
 	}
-	// FIXME: tags are ignored. Is the model correct?
 	return res.LastInsertId()
 }
 
-func (er *EventRepository) getByContent(ctx context.Context, event *model.Event) (*model.EventWithID, error) {
+func (er *EventRepository) getByContent(ctx context.Context, date time.Time, money int32, desc string) (*model.Event, error) {
 	res, err := er.q.GetEvent(ctx, query.GetEventParams{
 		Dt: sql.NullTime{
-			Time:  event.GetDate(),
+			Time:  date,
 			Valid: true,
 		},
 		Money: sql.NullInt32{
-			Int32: event.GetMoney(),
+			Int32: money,
 			Valid: true,
 		},
 		Description: sql.NullString{
-			String: event.GetDesc(),
+			String: desc,
 			Valid:  true,
 		},
 	})
@@ -70,19 +70,19 @@ func (er *EventRepository) getByContent(ctx context.Context, event *model.Event)
 		return nil, fmt.Errorf("failed to get event: %w", err)
 	}
 
-	return model.NewEventWithID(
+	return model.NewEvent(
 		res.ID, res.Dt.Time, res.Money.Int32,
 		res.Description.String, nil,
 	), nil
 }
 
-func (er *EventRepository) Get(id int64) (*model.Event, error) {
+func (er *EventRepository) GetWithoutTags(id int64) (*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.GetEventByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get event by ID: %w", err)
 	}
-	return model.NewEvent(res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
+	return model.NewEvent(res.ID, res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
 }
 
 func (er *EventRepository) Delete(id int64) error {
@@ -94,8 +94,8 @@ func (er *EventRepository) Delete(id int64) error {
 	return nil
 }
 
-func sortEventsByDate(events []*model.EventWithID) {
-	slices.SortFunc(events, func(a, b *model.EventWithID) int {
+func sortEventsByDate(events []*model.Event) {
+	slices.SortFunc(events, func(a, b *model.Event) int {
 		if a.GetDate().Before(b.GetDate()) {
 			return -1
 		} else if a.GetDate().After(b.GetDate()) {
@@ -105,7 +105,7 @@ func sortEventsByDate(events []*model.EventWithID) {
 	})
 }
 
-func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error) {
+func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.ListOutcomeEvents(ctx, query.ListOutcomeEventsParams{
 		FromDt: sql.NullTime{
@@ -121,9 +121,9 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 		return nil, fmt.Errorf("failed to list outcome events: %w", err)
 	}
 
-	events := make([]*model.EventWithID, 0)
+	events := make([]*model.Event, 0)
 	for _, ewt := range res {
-		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
 		if !ewt.Tagname.Valid {
 			events = append(events, e)
 			continue
@@ -147,7 +147,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.EventWith
 	return events, nil
 }
 
-func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error) {
+func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -171,9 +171,9 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *tim
 		return nil, fmt.Errorf("failed to list outcome events with tags: %w", err)
 	}
 
-	events := make([]*model.EventWithID, 0)
+	events := make([]*model.Event, 0)
 	for _, ewt := range res {
-		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)
@@ -193,7 +193,7 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *tim
 	return events, nil
 }
 
-func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, error) {
+func (er *EventRepository) List(from, to *time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.ListEvents(ctx, query.ListEventsParams{
 		FromDt: sql.NullTime{
@@ -209,9 +209,9 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 		return nil, fmt.Errorf("failed to list events: %w", err)
 	}
 
-	events := make([]*model.EventWithID, 0)
+	events := make([]*model.Event, 0)
 	for _, ewt := range res {
-		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)
@@ -231,7 +231,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.EventWithID, erro
 	return events, nil
 }
 
-func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error) {
+func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -255,9 +255,9 @@ func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) 
 		return nil, fmt.Errorf("failed to list events with tags: %w", err)
 	}
 
-	events := make([]*model.EventWithID, 0)
+	events := make([]*model.Event, 0)
 	for _, ewt := range res {
-		e := model.NewEventWithID(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)

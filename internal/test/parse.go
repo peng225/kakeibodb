@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
+func parseEventList(t *testing.T, rawEventList []byte) []*model.Event {
 	t.Helper()
 	strEventLines := strings.Split(strings.TrimSpace(string(rawEventList)), "\n")
 	require.LessOrEqual(t, 1, len(strEventLines))
 	// Skip header
 	strEventLines = strEventLines[1:]
-	events := make([]*model.EventWithID, len(strEventLines))
+	events := make([]*model.Event, len(strEventLines))
 	for i, strEventLine := range strEventLines {
 		strEvent := strings.Fields(strEventLine)
 		require.Len(t, strEvent, 5, strEventLine)
@@ -25,7 +25,7 @@ func parseEventList(t *testing.T, rawEventList []byte) []*model.EventWithID {
 		require.NoError(t, err)
 		money, err := strconv.ParseInt(strEvent[2], 10, 32)
 		require.NoError(t, err)
-		events[i] = model.NewEventWithID(
+		events[i] = model.NewEvent(
 			id, *date, int32(money), strEvent[3], nil,
 		)
 		if len(strEvent) == 4 {

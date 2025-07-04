@@ -11,14 +11,20 @@ import (
 	"time"
 )
 
+type EventCreateRequest struct {
+	Date  time.Time
+	Money int32
+	Desc  string
+}
+
 type EventRepository interface {
-	Create(event *model.Event) (int64, error)
-	Get(id int64) (*model.Event, error)
+	Create(req *EventCreateRequest) (int64, error)
+	GetWithoutTags(id int64) (*model.Event, error)
 	Delete(id int64) error
-	ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error)
-	ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error)
-	List(from, to *time.Time) ([]*model.EventWithID, error)
-	ListWithTags(tagNames []string, from, to *time.Time) ([]*model.EventWithID, error)
+	ListOutcomes(from, to *time.Time) ([]*model.Event, error)
+	ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error)
+	List(from, to *time.Time) ([]*model.Event, error)
+	ListWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error)
 }
 
 type EventTagMapRepository interface {
@@ -27,7 +33,7 @@ type EventTagMapRepository interface {
 }
 
 type EventPresenter interface {
-	Present(events []*model.EventWithID)
+	Present(events []*model.Event)
 }
 
 type EventUseCase struct {
@@ -100,9 +106,12 @@ func (eu *EventUseCase) LoadFromFile(file string) {
 			}
 			money = int32(tmpMoney)
 		}
-		e := model.NewEvent(*date, money, desc, nil)
 		log.Printf("create value (%v, %v, %v)\n", date, money, desc)
-		_, err = eu.eventRepo.Create(e)
+		_, err = eu.eventRepo.Create(&EventCreateRequest{
+			Date:  *date,
+			Money: money,
+			Desc:  desc,
+		})
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -144,14 +153,14 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) {
 
 	log.Printf("load from %s\n", file)
 
-	relatedEvent, err := eu.eventRepo.Get(relatedEventID)
+	relatedEvent, err := eu.eventRepo.GetWithoutTags(relatedEventID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Skip header
 	_ = csv.Read()
-	creditEvents := make([]*model.Event, 0)
+	creditEventCreateReqs := make([]*EventCreateRequest, 0)
 	for {
 		event := csv.Read()
 		if event == nil {
@@ -173,15 +182,19 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) {
 		tmpMoney *= -1
 		money := int32(tmpMoney)
 
-		creditEvents = append(creditEvents, model.NewEvent(*date, money, desc, nil))
+		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
+			Date:  *date,
+			Money: money,
+			Desc:  desc,
+		})
 	}
 
-	if !eu.deletingCorrectEvent(relatedEvent, creditEvents) {
-		log.Fatalf("deleting invalid event. ID = %v", relatedEventID)
+	if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
+		log.Fatalf("sum of credit events does not match original event (ID=%d)", relatedEventID)
 	}
-	for _, ce := range creditEvents {
-		log.Printf("create value (%v, %v, %v)\n", ce.GetDate(), ce.GetMoney(), ce.GetDesc())
-		_, err = eu.eventRepo.Create(ce)
+	for _, cecReq := range creditEventCreateReqs {
+		log.Printf("create value (%v, %v, %v)\n", cecReq.Date, cecReq.Money, cecReq.Desc)
+		_, err = eu.eventRepo.Create(cecReq)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -192,17 +205,17 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) {
 	}
 }
 
-func (eu *EventUseCase) deletingCorrectEvent(relatedEvent *model.Event, creditEvents []*model.Event) bool {
+func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEventCreateReqs []*EventCreateRequest) bool {
 	moneySum := int32(0)
-	for _, ce := range creditEvents {
-		moneySum += ce.GetMoney()
+	for _, cecReq := range creditEventCreateReqs {
+		moneySum += cecReq.Money
 	}
 
-	return moneySum == relatedEvent.GetMoney()
+	return moneySum == relatedEventMoney
 }
 
 func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time.Time) {
-	var events []*model.EventWithID
+	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
 		events, err = eu.eventRepo.ListOutcomes(from, to)
@@ -220,7 +233,7 @@ func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time
 }
 
 func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to *time.Time) {
-	var events []*model.EventWithID
+	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
 		events, err = eu.eventRepo.List(from, to)

@@ -1,11 +1,9 @@
 module kakeibodb
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.24.0
 
 require (
-	github.com/go-sql-driver/mysql v1.9.2
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.26.0
