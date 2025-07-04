@@ -97,6 +97,9 @@ func TestTag(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "bar")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("tag", "create", "-t", "bar")
+	require.NoError(t, err, string(stderr))
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("tag", "list")
 	require.NoError(t, err, string(stderr))
