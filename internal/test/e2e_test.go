@@ -79,14 +79,14 @@ func TestEvent(t *testing.T) {
 	require.NotEqual(t, -1, i)
 }
 
-func getEventsWithAllTags(t *testing.T, tags ...string) []*model.Event {
+func getEventsWithAllTags(t *testing.T, tagNames ...string) []*model.Event {
 	stdout, stderr, err := runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
 	seq := func(yield func(*model.Event) bool) {
 		for _, e := range events {
 			for _, tagName := range e.GetTagNames() {
-				if !slices.ContainsFunc(tags, func(t string) bool {
+				if !slices.ContainsFunc(tagNames, func(t string) bool {
 					return t == tagName
 				}) {
 					return
