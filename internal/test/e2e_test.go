@@ -41,10 +41,22 @@ func TestEvent(t *testing.T) {
 	t.Cleanup(func() { dbCleanup(t) })
 	_, stderr, err := runKakeiboDB("event", "load", "-d", "event")
 	require.NoError(t, err, string(stderr))
+	// Idempotency check.
+	_, stderr, err = runKakeiboDB("event", "load", "-d", "event")
+	require.NoError(t, err, string(stderr))
 	var stdout []byte
 	stdout, stderr, err = runKakeiboDB("event", "list")
 	require.NoError(t, err, string(stderr))
 	events := parseEventList(t, stdout)
+	seq := func(yield func(*model.EventWithID) bool) {
+		for _, e := range events {
+			if e.GetDesc() == "イチゴ" && !yield(e) {
+				return
+			}
+		}
+	}
+	require.Len(t, slices.Collect(seq), 1)
+
 	i := slices.IndexFunc(events, func(e *model.EventWithID) bool {
 		return e.GetDesc() == "クレジットカード"
 	})

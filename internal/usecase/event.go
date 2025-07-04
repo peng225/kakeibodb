@@ -13,7 +13,6 @@ import (
 
 type EventRepository interface {
 	Create(event *model.Event) (int64, error)
-	Exist(event *model.Event) (bool, error)
 	Get(id int64) (*model.Event, error)
 	Delete(id int64) error
 	ListOutcomes(from, to *time.Time) ([]*model.EventWithID, error)
@@ -102,14 +101,6 @@ func (eu *EventUseCase) LoadFromFile(file string) {
 			money = int32(tmpMoney)
 		}
 		e := model.NewEvent(*date, money, desc, nil)
-		dup, err := eu.eventRepo.Exist(e)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if dup {
-			log.Printf("duplicate event found. date = %v, money = %v, desc = %v", date, money, desc)
-			continue
-		}
 		log.Printf("create value (%v, %v, %v)\n", date, money, desc)
 		_, err = eu.eventRepo.Create(e)
 		if err != nil {
@@ -189,15 +180,6 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) {
 		log.Fatalf("deleting invalid event. ID = %v", relatedEventID)
 	}
 	for _, ce := range creditEvents {
-		dup, err := eu.eventRepo.Exist(ce)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if dup {
-			log.Printf("duplicate event found. date = %v, money = %v, desc = %v",
-				ce.GetDate(), ce.GetMoney(), ce.GetDesc())
-			continue
-		}
 		log.Printf("create value (%v, %v, %v)\n", ce.GetDate(), ce.GetMoney(), ce.GetDesc())
 		_, err = eu.eventRepo.Create(ce)
 		if err != nil {

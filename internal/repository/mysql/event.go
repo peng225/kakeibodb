@@ -23,6 +23,13 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 
 func (er *EventRepository) Create(event *model.Event) (int64, error) {
 	ctx := context.Background()
+	ewi, err := er.getByContent(ctx, event)
+	if err == nil {
+		return ewi.GetID(), nil
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return 0, err
+	}
+
 	res, err := er.q.CreateEvent(ctx, query.CreateEventParams{
 		Dt: sql.NullTime{
 			Time:  event.GetDate(),
@@ -44,9 +51,8 @@ func (er *EventRepository) Create(event *model.Event) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (er *EventRepository) Exist(event *model.Event) (bool, error) {
-	ctx := context.Background()
-	_, err := er.q.GetEvent(ctx, query.GetEventParams{
+func (er *EventRepository) getByContent(ctx context.Context, event *model.Event) (*model.EventWithID, error) {
+	res, err := er.q.GetEvent(ctx, query.GetEventParams{
 		Dt: sql.NullTime{
 			Time:  event.GetDate(),
 			Valid: true,
@@ -61,12 +67,13 @@ func (er *EventRepository) Exist(event *model.Event) (bool, error) {
 		},
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
+		return nil, fmt.Errorf("failed to get event: %w", err)
 	}
-	return true, nil
+
+	return model.NewEventWithID(
+		res.ID, res.Dt.Time, res.Money.Int32,
+		res.Description.String, nil,
+	), nil
 }
 
 func (er *EventRepository) Get(id int64) (*model.Event, error) {
