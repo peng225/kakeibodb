@@ -21,9 +21,9 @@ func NewPatternRepository(db *sql.DB) *PatternRepository {
 
 func (pr *PatternRepository) Create(key string) (int64, error) {
 	ctx := context.Background()
-	pwi, err := pr.getByKey(ctx, key)
+	pattern, err := pr.getByKey(ctx, key)
 	if err == nil {
-		return pwi.GetID(), nil
+		return pattern.GetID(), nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
