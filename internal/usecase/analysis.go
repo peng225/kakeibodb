@@ -33,19 +33,6 @@ type MoneyAndTagEntry struct {
 	tagEntry db_client.TagEntry
 }
 
-func (ah *AnalysisHandler) Rank(from, to string) {
-	totalOutcome, mtes, err := ah.rank(from, to, "money")
-	if err != nil {
-		log.Fatal(err)
-	}
-	p := message.NewPrinter(language.English)
-	p.Printf("total: %d\n", totalOutcome)
-	for _, mte := range mtes {
-		p.Printf("%-8s:\t%8d (%f%%)\n", mte.tagEntry.TagName, mte.money,
-			float32(100.0)*float32(mte.money)/float32(totalOutcome))
-	}
-}
-
 func (ah *AnalysisHandler) rank(from, to, sortKey string) (int, []*MoneyAndTagEntry, error) {
 	totalOutcome := ah.dbClient.GetOutcomeSum(from, to)
 	if totalOutcome == 0 {
