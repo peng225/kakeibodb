@@ -521,3 +521,18 @@ type UnmapPatternFromTagParams struct {
 func (q *Queries) UnmapPatternFromTag(ctx context.Context, arg UnmapPatternFromTagParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, unmapPatternFromTag, arg.PatternID, arg.TagID)
 }
+
+const updateEventMoney = `-- name: UpdateEventMoney :exec
+UPDATE event SET money = ?
+WHERE id = ?
+`
+
+type UpdateEventMoneyParams struct {
+	Money sql.NullInt32
+	ID    int64
+}
+
+func (q *Queries) UpdateEventMoney(ctx context.Context, arg UpdateEventMoneyParams) error {
+	_, err := q.db.ExecContext(ctx, updateEventMoney, arg.Money, arg.ID)
+	return err
+}

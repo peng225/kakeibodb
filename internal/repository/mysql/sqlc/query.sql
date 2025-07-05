@@ -13,6 +13,10 @@ WHERE dt = ? AND money = ? AND description = ?;
 SELECT * FROM event
 WHERE id = ?;
 
+-- name: UpdateEventMoney :exec
+UPDATE event SET money = ?
+WHERE id = ?;
+
 -- name: DeleteEventByID :exec
 DELETE FROM event
 WHERE id = ?;
