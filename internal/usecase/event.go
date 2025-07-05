@@ -113,7 +113,7 @@ func (eu *EventUseCase) LoadFromFile(file string) error {
 		_, err = eu.eventRepo.Create(&EventCreateRequest{
 			Date:  *date,
 			Money: money,
-			Desc:  desc,
+			Desc:  model.FormatDesc(desc),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create event: %w", err)
@@ -192,7 +192,7 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) er
 		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
 			Date:  *date,
 			Money: money,
-			Desc:  desc,
+			Desc:  model.FormatDesc(desc),
 		})
 	}
 
@@ -273,7 +273,7 @@ func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.
 	_, err = eu.eventRepo.Create(&EventCreateRequest{
 		Date:  date,
 		Money: money,
-		Desc:  desc,
+		Desc:  model.FormatDesc(desc),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create event: %w", err)
