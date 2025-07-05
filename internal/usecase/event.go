@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,12 @@ type EventTagMapUsecase struct {
 	etmRepo EventTagMapRepository
 }
 
+type ApplyPatternUseCase struct {
+	EventUseCase
+	EventTagMapUsecase
+	patternRepo PatternRepository
+}
+
 func NewEventUseCase(eventRepo EventRepository) *EventUseCase {
 	return &EventUseCase{
 		eventRepo: eventRepo,
@@ -67,6 +74,15 @@ func NewEventPresentUseCase(eventRepo EventRepository, eventPresenter EventPrese
 func NewEventTagMapUseCase(etmRepo EventTagMapRepository) *EventTagMapUsecase {
 	return &EventTagMapUsecase{
 		etmRepo: etmRepo,
+	}
+}
+
+func NewApplyPatternUseCase(eventRepo EventRepository, etmRepo EventTagMapRepository,
+	patternRepo PatternRepository) *ApplyPatternUseCase {
+	return &ApplyPatternUseCase{
+		EventUseCase:       *NewEventUseCase(eventRepo),
+		EventTagMapUsecase: *NewEventTagMapUseCase(etmRepo),
+		patternRepo:        patternRepo,
 	}
 }
 
@@ -333,6 +349,32 @@ func (etmu *EventTagMapUsecase) RemoveTag(eventID int64, tagName string) error {
 	err := etmu.etmRepo.Unmap(eventID, tagName)
 	if err != nil {
 		return fmt.Errorf("failed to add tag: %w", err)
+	}
+	return nil
+}
+
+func (apu *ApplyPatternUseCase) ApplyPattern(from, to *time.Time) error {
+	events, err := apu.eventRepo.List(from, to)
+	if err != nil {
+		return err
+	}
+
+	patterns, err := apu.patternRepo.List()
+	if err != nil {
+		return err
+	}
+
+	for _, event := range events {
+		for _, pattern := range patterns {
+			if strings.Contains(event.GetDesc(), pattern.GetKey()) {
+				for _, tagName := range pattern.GetTagNames() {
+					err = apu.etmRepo.Map(event.GetID(), tagName)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
 	}
 	return nil
 }

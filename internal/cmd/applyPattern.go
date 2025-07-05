@@ -1,9 +1,11 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/model"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -20,18 +22,43 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		from, err := cmd.Flags().GetString("from")
+		strFrom, err := cmd.Flags().GetString("from")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
-		to, err := cmd.Flags().GetString("to")
+		strTo, err := cmd.Flags().GetString("to")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer eh.Close()
-		eh.ApplyPattern(from, to)
+		from, err := model.ParseDate(strFrom)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+		to, err := model.ParseDate(strTo)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+		defer db.Close()
+		eventRepo := mysql.NewEventRepository(db)
+		etmRepo := mysql.NewEventTagMapRepository(db)
+		patternRepo := mysql.NewPatternRepository(db)
+		apUC := usecase.NewApplyPatternUseCase(eventRepo, etmRepo, patternRepo)
+		err = apUC.ApplyPattern(from, to)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 
