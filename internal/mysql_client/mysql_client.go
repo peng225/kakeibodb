@@ -52,38 +52,6 @@ func (mc *MySQLClient) Close() {
 	mc.db.Close()
 }
 
-func (mc *MySQLClient) Insert(table string, withID bool, data []any) (int64, error) {
-	if data == nil || len(data) == 0 {
-		return 0, errors.New("empty data.")
-	}
-	queryString := "insert into " + table + " VALUES(?"
-	if withID {
-		queryString += ",?"
-	}
-	queryString += strings.Repeat(",?", len(data)-1) + ")"
-	stmtIns, err := mc.db.Prepare(queryString)
-	if err != nil {
-		return 0, err
-	}
-	defer stmtIns.Close()
-
-	insertData := make([]any, 0)
-	if withID {
-		insertData = append(insertData, 0)
-	}
-	insertData = append(insertData, data...)
-	result, err := stmtIns.Exec(insertData...)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		// Not all tables have auto-incremented ID column.
-		return 0, nil
-	}
-	return id, nil
-}
-
 func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]string, error) {
 	queryStr := fmt.Sprintf("select * from %s", table)
 

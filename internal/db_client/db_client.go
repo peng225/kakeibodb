@@ -30,7 +30,6 @@ type PatternToTagEntry struct {
 type DBClient interface {
 	Open()
 	Close()
-	Insert(table string, withID bool, data []any) (int64, error)
 	Select(table string, param any) ([]string, []map[string]string, error)
 	GetIncomeSum(from, to string) int
 	GetOutcomeSum(from, to string) int
