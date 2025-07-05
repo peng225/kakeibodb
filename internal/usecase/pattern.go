@@ -3,6 +3,7 @@ package usecase
 import (
 	"fmt"
 	"kakeibodb/internal/model"
+	"log/slog"
 )
 
 type PatternRepository interface {
@@ -53,10 +54,11 @@ func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsec
 }
 
 func (pu *PatternUseCase) Create(key string) error {
-	_, err := pu.patternRepo.Create(key)
+	id, err := pu.patternRepo.Create(key)
 	if err != nil {
 		return fmt.Errorf("failed to create pattern: %w", err)
 	}
+	slog.Info("Created a pattern.", "ID", id)
 	return nil
 }
 
