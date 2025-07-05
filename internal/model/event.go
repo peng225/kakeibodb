@@ -19,9 +19,7 @@ type Event struct {
 
 func NewEvent(id int64, date time.Time, money int32,
 	desc string, tagNames []string) *Event {
-	if len([]rune(desc)) >= eventDescLength {
-		desc = string([]rune(desc)[0:eventDescLength])
-	}
+	desc = FormatDesc(desc)
 	return &Event{
 		id:       id,
 		date:     date,
@@ -45,6 +43,13 @@ func ParseDate(ds string) (*time.Time, error) {
 		}
 	}
 	return nil, err
+}
+
+func FormatDesc(desc string) string {
+	if len([]rune(desc)) >= eventDescLength {
+		desc = string([]rune(desc)[0:eventDescLength])
+	}
+	return desc
 }
 
 func (e *Event) GetID() int64 {
