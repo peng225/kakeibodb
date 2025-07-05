@@ -3,10 +3,8 @@ package usecase
 import (
 	"fmt"
 	"log"
-	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"kakeibodb/internal/db_client"
 )
@@ -125,75 +123,4 @@ func getTagIDFromName(dbClient db_client.DBClient, tagName string) (int, error) 
 		return 0, err
 	}
 	return tagID, nil
-}
-
-func (eh *EventHandler) GetEventIDFromSplitBaseTag(splitBaseTagName string,
-	date string) (int, error) {
-	layout := "2006-01-02"
-	t, err := time.Parse(layout, date)
-	if err != nil {
-		log.Fatal(err)
-	}
-	y, m, d := t.AddDate(0, -2, -5).Date()
-	from := fmt.Sprintf("%d-%02d-%02d", y, m, d)
-	entries, err := eh.dbClient.GetPaymentEventWithAllTags([]string{splitBaseTagName}, from, date)
-	if err != nil {
-		return 0, err
-	}
-	sort.Slice(entries, func(i, j int) bool {
-		layout := "2006-01-02"
-		iTime, err := time.Parse(layout, entries[i]["dt"])
-		if err != nil {
-			log.Fatal(err)
-		}
-		jTime, err := time.Parse(layout, entries[j]["dt"])
-		if err != nil {
-			log.Fatal(err)
-		}
-		return iTime.After(jTime)
-	})
-	entryID, err := strconv.Atoi(entries[0]["id"])
-	if err != nil {
-		return 0, err
-	}
-	return entryID, nil
-}
-
-func (eh *EventHandler) Split(eventID int, date string, money int, desc string) {
-	eventQuery := db_client.EventEntry{
-		ID: eventID,
-	}
-	_, events, err := eh.dbClient.Select(db_client.EventTableName, eventQuery)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(events) != 1 {
-		log.Fatalf("event not found: eventID = %d", eventID)
-	}
-
-	eventMoneyStr := events[0][db_client.EventColMoney]
-	eventMoney, err := strconv.Atoi(eventMoneyStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if eventMoney > money {
-		log.Fatalf("eventMoney(%d) should be smaller than or equal to money(%d)", eventMoney, money)
-	}
-
-	// Update the existing event.
-	condition := make(map[string]string)
-	condition[db_client.EventColID] = strconv.Itoa(eventID)
-	updateData := make(map[string]string)
-	updateData[db_client.EventColMoney] = strconv.Itoa(eventMoney - money)
-	err = eh.dbClient.Update(db_client.EventTableName, condition, updateData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Insert a new event.
-	newEventEntry := []any{date, money, desc}
-	_, err = eh.dbClient.Insert(db_client.EventTableName, true, newEventEntry)
-	if err != nil {
-		log.Fatal(err)
-	}
 }

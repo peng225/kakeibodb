@@ -173,41 +173,6 @@ func (mc *MySQLClient) Select(table string, param any) ([]string, []map[string]s
 	return header, entries, nil
 }
 
-func (mc *MySQLClient) GetPaymentEventWithAllTags(tags []string, from, to string) ([]map[string]string, error) {
-	singleQuotedTags := singleQuoteEachString(tags)
-	queryStr := fmt.Sprintf("select %s.*, group_concat(%s.name separator ', ') as tags from %s left outer join %s on %s.id = %s.event_id left outer join %s on %s.id = %s.tag_id where (event.dt between '%s' and '%s') and (tag.name in (%s)) and (event.money < 0) group by %s.id order by event.dt;",
-		db_client.EventTableName, db_client.TagTableName,
-		db_client.EventTableName, db_client.EventToTagTableName,
-		db_client.EventTableName, db_client.EventToTagTableName,
-		db_client.TagTableName, db_client.TagTableName, db_client.EventToTagTableName,
-		from, to, strings.Join(singleQuotedTags, ","),
-		db_client.EventTableName)
-	rows, err := mc.db.Query(queryStr)
-	if err != nil {
-		return nil, err
-	}
-
-	header, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-
-	entries := make([]map[string]string, 0)
-	for rows.Next() {
-		entry := make(map[string]string)
-		scanData := make([]string, len(header))
-		err = rows.Scan(&scanData[0], &scanData[1], &scanData[2], &scanData[3], &scanData[4])
-		if err != nil {
-			return nil, err
-		}
-		for i, d := range scanData {
-			entry[header[i]] = d
-		}
-		entries = append(entries, entry)
-	}
-	return entries, nil
-}
-
 func (mc *MySQLClient) GetIncomeSum(from, to string) int {
 	row := mc.db.QueryRow(fmt.Sprintf("select sum(%s.money) from %s where (%s.dt between '%s' and '%s') and (%s.money > 0);",
 		db_client.EventTableName, db_client.EventTableName,
@@ -295,30 +260,4 @@ func (mc *MySQLClient) GetOutcomeSumWithoutTag(from, to string) int {
 		money = 0
 	}
 	return money
-}
-
-func (mc *MySQLClient) Update(table string, cond map[string]string, data map[string]string) error {
-	if len(data) == 0 {
-		return errors.New("empty data.")
-	}
-	queryString := "update " + table + " set "
-	for k, v := range data {
-		queryString += fmt.Sprintf("%s = %s, ", k, v)
-	}
-	queryString = queryString[:len(queryString)-2]
-
-	if len(cond) != 0 {
-		queryString += " where "
-		connector := " and "
-		for k, v := range cond {
-			queryString += fmt.Sprintf("%s = %s%s", k, v, connector)
-		}
-		queryString = queryString[:len(queryString)-len(connector)]
-	}
-
-	_, err := mc.db.Query(queryString)
-	if err != nil {
-		return err
-	}
-	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"kakeibodb/internal/event"
 	"kakeibodb/internal/model"
 	"log/slog"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,6 +21,7 @@ type EventCreateRequest struct {
 type EventRepository interface {
 	Create(req *EventCreateRequest) (int64, error)
 	GetWithoutTags(id int64) (*model.Event, error)
+	UpdateMoney(id int64, money int32) error
 	Delete(id int64) error
 	ListOutcomes(from, to *time.Time) ([]*model.Event, error)
 	ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error)
@@ -219,6 +221,64 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEven
 	}
 
 	return moneySum == relatedEventMoney
+}
+
+func (eu *EventUseCase) getEventIDFromSplitBaseTag(splitBaseTagName string,
+	date time.Time) (int64, error) {
+	from := date.AddDate(0, -2, -5)
+	events, err := eu.eventRepo.ListOutcomesWithTags([]string{splitBaseTagName}, &from, &date)
+	if err != nil {
+		return 0, err
+	}
+	return events[len(events)-1].GetID(), nil
+}
+
+func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.Time, money int32, desc string) error {
+	if eventID == -1 {
+		var err error
+		eventID, err = eu.getEventIDFromSplitBaseTag(splitBaseTagName, date)
+		if err != nil {
+			return err
+		}
+		slog.Info("Auto detected.", "eventID", eventID)
+	}
+
+	event, err := eu.eventRepo.GetWithoutTags(eventID)
+	if err != nil {
+		return fmt.Errorf("failed to get event: %w", err)
+	}
+
+	if event.GetMoney()*money <= 0 {
+		return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
+	}
+	if math.Abs(float64(event.GetMoney())) < math.Abs(float64(money)) {
+		return fmt.Errorf("abs(to be split event money)(%f) should be larger than or equal to abs(splitting event money)(%f)",
+			math.Abs(float64(event.GetMoney())), math.Abs(float64(money)))
+	}
+
+	// Update the existing event.
+	if event.GetMoney() == money {
+		err = eu.eventRepo.Delete(eventID)
+		if err != nil {
+			return fmt.Errorf("failed to delete event: %w", err)
+		}
+	} else {
+		err = eu.eventRepo.UpdateMoney(eventID, event.GetMoney()-money)
+		if err != nil {
+			return fmt.Errorf("failed to update event money: %w", err)
+		}
+	}
+
+	// Insert a new event.
+	_, err = eu.eventRepo.Create(&EventCreateRequest{
+		Date:  date,
+		Money: money,
+		Desc:  desc,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create event: %w", err)
+	}
+	return nil
 }
 
 func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time.Time) error {

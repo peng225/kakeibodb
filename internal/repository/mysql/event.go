@@ -85,6 +85,21 @@ func (er *EventRepository) GetWithoutTags(id int64) (*model.Event, error) {
 	return model.NewEvent(res.ID, res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
 }
 
+func (er *EventRepository) UpdateMoney(id int64, money int32) error {
+	ctx := context.Background()
+	err := er.q.UpdateEventMoney(ctx, query.UpdateEventMoneyParams{
+		ID: id,
+		Money: sql.NullInt32{
+			Int32: money,
+			Valid: true,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update event's money: %w", err)
+	}
+	return nil
+}
+
 func (er *EventRepository) Delete(id int64) error {
 	ctx := context.Background()
 	err := er.q.DeleteEventByID(ctx, id)

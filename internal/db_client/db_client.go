@@ -32,11 +32,9 @@ type DBClient interface {
 	Close()
 	Insert(table string, withID bool, data []any) (int64, error)
 	Select(table string, param any) ([]string, []map[string]string, error)
-	GetPaymentEventWithAllTags(tags []string, from, to string) ([]map[string]string, error)
 	GetIncomeSum(from, to string) int
 	GetOutcomeSum(from, to string) int
 	GetOutcomeSumForAllTags(tags []string, from, to string) int
 	GetOutcomeSumForAnyTags(tags []string, from, to string) int
 	GetOutcomeSumWithoutTag(from, to string) int
-	Update(table string, cond map[string]string, data map[string]string) error
 }

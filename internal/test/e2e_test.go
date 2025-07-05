@@ -276,7 +276,11 @@ func TestSplit(t *testing.T) {
 	require.NoError(t, err, string(stderr))
 	_, stderr, err = runKakeiboDB("tag", "create", "-t", "candy")
 	require.NoError(t, err, string(stderr))
+	// In the following test scenario, event 10 is unchanged,
+	// and event 11 is updated.
 	_, stderr, err = runKakeiboDB("event", "addTag", "--eventID", "10", "--tagNames", "candy")
+	require.NoError(t, err, string(stderr))
+	_, stderr, err = runKakeiboDB("event", "addTag", "--eventID", "11", "--tagNames", "candy")
 	require.NoError(t, err, string(stderr))
 
 	stdout, stderr, err = runKakeiboDB("event", "list")
@@ -294,10 +298,10 @@ func TestSplit(t *testing.T) {
 	beforeCandyMoney := candyEvents[0].GetMoney()
 
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "10",
+	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "11",
 		"--date", "2021-12-04", "--money", "-30", "--desc", "はちみつのど飴")
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "10",
+	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "11",
 		"--date", "2021/12/05", "--money", "-30", "--desc", "きんかんのど飴")
 	require.NoError(t, err, string(stderr))
 

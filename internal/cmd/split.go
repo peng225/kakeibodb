@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"kakeibodb/internal/db_client"
-	"log"
-	"os"
-	"time"
-
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/model"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
+	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -30,57 +28,58 @@ to quickly create a Cobra application.`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		splitBaseTagName = os.Getenv(envSplitBaseTagName)
 		if splitBaseTagName != "" {
-			log.Printf("%s: %s\n", envSplitBaseTagName, splitBaseTagName)
+			slog.Info("Env var detected.", envSplitBaseTagName, splitBaseTagName)
 		}
 		// The env can be empty string. That is also OK.
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		eventID, err := cmd.Flags().GetInt("eventID")
+		eventID, err := cmd.Flags().GetInt64("eventID")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		if eventID == -1 && splitBaseTagName == "" {
-			log.Fatalf("Either --eventID flag or %s env should be set.",
-				envSplitBaseTagName)
+			slog.Error(
+				fmt.Sprintf("Either --eventID flag or %s env should be set.",
+					envSplitBaseTagName),
+			)
+			os.Exit(1)
 		}
-		date, err := cmd.Flags().GetString("date")
+		strDate, err := cmd.Flags().GetString("date")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
-		money, err := cmd.Flags().GetInt("money")
+		money, err := cmd.Flags().GetInt32("money")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		desc, err := cmd.Flags().GetString("desc")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
-		layouts := []string{"2006/01/02", "2006-01-02"}
-		for _, layout := range layouts {
-			_, err = time.Parse(layout, date)
-			if err == nil {
-				break
-			}
-		}
+		date, err := model.ParseDate(strDate)
 		if err != nil {
-			log.Fatal(err)
-		}
-		if len([]rune(desc)) >= db_client.EventDescLength {
-			desc = string([]rune(desc)[0:db_client.EventDescLength])
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
-		eh := usecase.NewEventHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		defer eh.Close()
-
-		if eventID == -1 {
-			eventID, err = eh.GetEventIDFromSplitBaseTag(splitBaseTagName, date)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("Auto detected eventID: %d\n", eventID)
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
-		eh.Split(eventID, date, money, desc)
+		defer db.Close()
+		eventRepo := mysql.NewEventRepository(db)
+		eventUC := usecase.NewEventUseCase(eventRepo)
+		err = eventUC.Split(eventID, splitBaseTagName, *date, money, desc)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 
@@ -96,9 +95,9 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// splitCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	splitCmd.Flags().Int("eventID", -1, "The event ID to be split")
+	splitCmd.Flags().Int64("eventID", -1, "The event ID to be split")
 	splitCmd.Flags().String("date", "", "Date of the new event (YYYY-MM-DD or YYYY/MM/DD)")
-	splitCmd.Flags().Int("money", -1, "Money of the new event")
+	splitCmd.Flags().Int32("money", -1, "Money of the new event")
 	splitCmd.Flags().String("desc", "", "Description of the new event")
 
 	splitCmd.MarkFlagRequired("date")
