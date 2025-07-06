@@ -4,9 +4,12 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
-	"kakeibodb/internal/mysql_client"
+	"kakeibodb/internal/model"
+	"kakeibodb/internal/presenter/console"
+	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
 	"github.com/spf13/cobra"
@@ -25,24 +28,51 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cf, err := parseCommonFlags(cmd)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
 		interval, err := cmd.Flags().GetInt("interval")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		window, err := cmd.Flags().GetInt("window")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 		top, err := cmd.Flags().GetInt("top")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error(err.Error())
+			os.Exit(1)
 		}
 
-		ah := usecase.NewAnalysisHandler(mysql_client.NewMySQLClient(dbName, dbPort, user))
-		ah.TimeSeries(cf.from, cf.to, interval, window, top)
+		from, err := model.ParseDate(cf.from)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+		to, err := model.ParseDate(cf.to)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+
+		db, err := OpenDB(dbName, dbPort, user)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
+		defer db.Close()
+		eventRepo := mysql.NewEventRepository(db)
+		analysysPresenter := console.NewAnalysisPresenter()
+		analysisUC := usecase.NewAnalysisUseCase(eventRepo, analysysPresenter)
+		err = analysisUC.TimeSeries(from, to, interval, window, top)
+		if err != nil {
+			slog.Error(err.Error())
+			os.Exit(1)
+		}
 	},
 }
 
