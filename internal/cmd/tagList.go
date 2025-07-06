@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"kakeibodb/internal/presenter/console"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
@@ -30,7 +31,8 @@ to quickly create a Cobra application.`,
 		tagRepo := mysql.NewTagRepository(db)
 		tagPresenter := console.NewTagPresenter()
 		tagUC := usecase.NewTagPresentUseCase(tagRepo, tagPresenter)
-		err = tagUC.List()
+		ctx := context.Background()
+		err = tagUC.List(ctx)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

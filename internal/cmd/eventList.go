@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"kakeibodb/internal/model"
 	"kakeibodb/internal/presenter/console"
 	"kakeibodb/internal/repository/mysql"
@@ -73,10 +74,11 @@ to quickly create a Cobra application.`,
 		eventRepo := mysql.NewEventRepository(db)
 		eventPresenter := console.NewEventPresenter()
 		eventPresentUC := usecase.NewEventPresentUseCase(eventRepo, eventPresenter)
+		ctx := context.Background()
 		if all {
-			err = eventPresentUC.PresentAll(tagNames, *from, *to)
+			err = eventPresentUC.PresentAll(ctx, tagNames, *from, *to)
 		} else {
-			err = eventPresentUC.PresentOutcomes(tagNames, *from, *to)
+			err = eventPresentUC.PresentOutcomes(ctx, tagNames, *from, *to)
 		}
 		if err != nil {
 			slog.Error(err.Error())

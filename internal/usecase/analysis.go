@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"kakeibodb/internal/model"
 	"slices"
 	"time"
@@ -23,8 +24,8 @@ type tagNameAndMoney struct {
 	money   int32
 }
 
-func (au *AnalysisUseCase) GetMoneySumGroupedByTagName(from, to time.Time) (map[string]int32, error) {
-	events, err := au.eventRepo.ListOutcomes(from, to)
+func (au *AnalysisUseCase) GetMoneySumGroupedByTagName(ctx context.Context, from, to time.Time) (map[string]int32, error) {
+	events, err := au.eventRepo.ListOutcomes(ctx, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +100,8 @@ func GetHighlyRankedTagNames(msGroupedByTagNameForEveryWindow [](map[string]int3
 	return highlyRankedTagNames
 }
 
-func (au *AnalysisUseCase) getMoneyTotal(from, to time.Time) (int32, int32, error) {
-	events, err := au.eventRepo.List(from, to)
+func (au *AnalysisUseCase) getMoneyTotal(ctx context.Context, from, to time.Time) (int32, int32, error) {
+	events, err := au.eventRepo.List(ctx, from, to)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -128,19 +129,19 @@ type TimeSeriesReport struct {
 	Items       []*TimeSeriesReportItem
 }
 
-func (au *AnalysisUseCase) TimeSeries(from, to time.Time, interval, window, top int) error {
+func (au *AnalysisUseCase) TimeSeries(ctx context.Context, from, to time.Time, interval, window, top int) error {
 	msGroupedByTagNameForEveryWindow := make([](map[string]int32), 0)
 	totalIncomeForEveryWindow := make([]int32, 0)
 	totalOutcomeForEveryWindow := make([]int32, 0)
 	for windowTo := from; windowTo.Before(to); windowTo = windowTo.AddDate(0, interval, 0) {
 		windowFrom := windowTo.AddDate(0, -window, 0)
-		msGroupedByTagName, err := au.GetMoneySumGroupedByTagName(windowFrom, windowTo)
+		msGroupedByTagName, err := au.GetMoneySumGroupedByTagName(ctx, windowFrom, windowTo)
 		if err != nil {
 			return err
 		}
 		msGroupedByTagNameForEveryWindow = append(msGroupedByTagNameForEveryWindow, msGroupedByTagName)
 
-		totalIncome, totalOutcome, err := au.getMoneyTotal(windowFrom, windowTo)
+		totalIncome, totalOutcome, err := au.getMoneyTotal(ctx, windowFrom, windowTo)
 		totalIncomeForEveryWindow = append(totalIncomeForEveryWindow, totalIncome)
 		totalOutcomeForEveryWindow = append(totalOutcomeForEveryWindow, totalOutcome)
 	}

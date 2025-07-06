@@ -18,8 +18,7 @@ func NewEventTagMapRepository(db *sql.DB) *EventTagMapRepository {
 	}
 }
 
-func (etmr *EventTagMapRepository) Map(eventID int64, tagName string) error {
-	ctx := context.Background()
+func (etmr *EventTagMapRepository) Map(ctx context.Context, eventID int64, tagName string) error {
 	res, err := etmr.q.GetTag(ctx, sql.NullString{
 		String: tagName,
 		Valid:  true,
@@ -61,8 +60,7 @@ func (etmr *EventTagMapRepository) Map(eventID int64, tagName string) error {
 	return nil
 }
 
-func (etmr *EventTagMapRepository) Unmap(eventID int64, tagName string) error {
-	ctx := context.Background()
+func (etmr *EventTagMapRepository) Unmap(ctx context.Context, eventID int64, tagName string) error {
 	res, err := etmr.q.GetTag(ctx, sql.NullString{
 		String: tagName,
 		Valid:  true,

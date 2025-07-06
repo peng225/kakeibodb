@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -35,7 +36,8 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		tagRepo := mysql.NewTagRepository(db)
 		tagUC := usecase.NewTagUseCase(tagRepo)
-		err = tagUC.Delete(tagID)
+		ctx := context.Background()
+		err = tagUC.Delete(ctx, tagID)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)
