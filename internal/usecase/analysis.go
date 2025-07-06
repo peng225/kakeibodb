@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"kakeibodb/internal/model"
 	"slices"
 	"time"
 )
@@ -31,7 +32,7 @@ func (au *AnalysisUseCase) GetMoneySumGroupedByTagName(from, to time.Time) (map[
 	moneySumByTagName := make(map[string]int32)
 	for _, e := range events {
 		if len(e.GetTagNames()) == 0 {
-			moneySumByTagName["NONE"] += e.GetMoney()
+			moneySumByTagName[model.EmptyTagName] += e.GetMoney()
 			continue
 		}
 		for _, tagName := range e.GetTagNames() {

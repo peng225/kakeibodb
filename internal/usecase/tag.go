@@ -32,6 +32,9 @@ func NewTagPresentUseCase(tagRepo TagRepository, tagPresenter TagPresenter) *Tag
 }
 
 func (tu *TagUseCase) Create(tagName string) error {
+	if !model.ValidTagName(tagName) {
+		return fmt.Errorf("invalid tag name (%s)", tagName)
+	}
 	_, err := tu.tagRepo.Create(tagName)
 	if err != nil {
 		return fmt.Errorf("failed to create tag: %w", err)

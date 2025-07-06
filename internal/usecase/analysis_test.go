@@ -1,6 +1,7 @@
 package usecase_test
 
 import (
+	"kakeibodb/internal/model"
 	"kakeibodb/internal/repository/mysql/fake"
 	"kakeibodb/internal/usecase"
 	"testing"
@@ -23,7 +24,7 @@ func TestGetMoneySumGroupedByTagName_NoTag(t *testing.T) {
 	ret, err := analysisUC.GetMoneySumGroupedByTagName(from, to)
 	require.NoError(t, err)
 	require.Len(t, ret, 1)
-	assert.Equal(t, int32(-100), ret["NONE"])
+	assert.Equal(t, int32(-100), ret[model.EmptyTagName])
 }
 
 func TestGetMoneySumGroupedByTagName_BoundaryCheck(t *testing.T) {
