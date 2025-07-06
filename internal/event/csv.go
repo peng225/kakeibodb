@@ -28,7 +28,7 @@ func (c *CSV) Open(filePath string) error {
 func (c *CSV) Close() error {
 	err := c.fp.Close()
 	if err != nil {
-		return fmt.Errorf("failed to close: %w")
+		return fmt.Errorf("failed to close: %w", err)
 	}
 	return nil
 }
