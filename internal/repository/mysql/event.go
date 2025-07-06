@@ -120,15 +120,15 @@ func sortEventsByDate(events []*model.Event) {
 	})
 }
 
-func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.Event, error) {
+func (er *EventRepository) ListOutcomes(from, to time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.ListOutcomeEvents(ctx, query.ListOutcomeEventsParams{
 		FromDt: sql.NullTime{
-			Time:  *from,
+			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  *to,
+			Time:  to,
 			Valid: true,
 		},
 	})
@@ -162,7 +162,7 @@ func (er *EventRepository) ListOutcomes(from, to *time.Time) ([]*model.Event, er
 	return events, nil
 }
 
-func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
+func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -173,11 +173,11 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *tim
 	ctx := context.Background()
 	res, err := er.q.ListOutcomeEventsWithTags(ctx, query.ListOutcomeEventsWithTagsParams{
 		FromDt: sql.NullTime{
-			Time:  *from,
+			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  *to,
+			Time:  to,
 			Valid: true,
 		},
 		Tagnames: sqlTags,
@@ -208,15 +208,15 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to *tim
 	return events, nil
 }
 
-func (er *EventRepository) List(from, to *time.Time) ([]*model.Event, error) {
+func (er *EventRepository) List(from, to time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
 	res, err := er.q.ListEvents(ctx, query.ListEventsParams{
 		FromDt: sql.NullTime{
-			Time:  *from,
+			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  *to,
+			Time:  to,
 			Valid: true,
 		},
 	})
@@ -246,7 +246,7 @@ func (er *EventRepository) List(from, to *time.Time) ([]*model.Event, error) {
 	return events, nil
 }
 
-func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
+func (er *EventRepository) ListWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -257,11 +257,11 @@ func (er *EventRepository) ListWithTags(tagNames []string, from, to *time.Time) 
 	ctx := context.Background()
 	res, err := er.q.ListEventsWithTags(ctx, query.ListEventsWithTagsParams{
 		FromDt: sql.NullTime{
-			Time:  *from,
+			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  *to,
+			Time:  to,
 			Valid: true,
 		},
 		Tagnames: sqlTags,

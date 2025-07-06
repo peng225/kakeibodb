@@ -54,7 +54,7 @@ to quickly create a Cobra application.`,
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		patternRepo := mysql.NewPatternRepository(db)
 		apUC := usecase.NewApplyPatternUseCase(eventRepo, etmRepo, patternRepo)
-		err = apUC.ApplyPattern(from, to)
+		err = apUC.ApplyPattern(*from, *to)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

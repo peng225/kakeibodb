@@ -74,9 +74,9 @@ to quickly create a Cobra application.`,
 		eventPresenter := console.NewEventPresenter()
 		eventPresentUC := usecase.NewEventPresentUseCase(eventRepo, eventPresenter)
 		if all {
-			err = eventPresentUC.PresentAll(tagNames, from, to)
+			err = eventPresentUC.PresentAll(tagNames, *from, *to)
 		} else {
-			err = eventPresentUC.PresentOutcomes(tagNames, from, to)
+			err = eventPresentUC.PresentOutcomes(tagNames, *from, *to)
 		}
 		if err != nil {
 			slog.Error(err.Error())
