@@ -74,6 +74,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// applyPatternCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	applyPatternCmd.Flags().String("from", "2018-01-01", "the beginning of time range")
-	applyPatternCmd.Flags().String("to", "2100-12-31", "the end of time range")
+	applyPatternCmd.Flags().String("from", "2018-01-01", "the beginning of time range (inclusive edge)")
+	applyPatternCmd.Flags().String("to", "2100-12-31", "the end of time range (exclusive edge)")
 }

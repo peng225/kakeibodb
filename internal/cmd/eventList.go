@@ -98,8 +98,8 @@ func init() {
 	// is called directly, e.g.:
 	// eventListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	eventListCmd.Flags().StringSlice("tags", nil, `tag list (eg. "foo", "foo,var" etc.)`)
-	eventListCmd.Flags().String("from", "2018-01-01", "the beginning of time range")
-	eventListCmd.Flags().String("to", "2100-12-31", "the end of time range")
+	eventListCmd.Flags().String("from", "2018-01-01", "the beginning of time range (inclusive edge)")
+	eventListCmd.Flags().String("to", "2100-12-31", "the end of time range (exclusive edge)")
 	eventListCmd.Flags().Int("last", -1, "show the events of last X days")
 	eventListCmd.Flags().BoolP("all", "a", false, "show all events")
 

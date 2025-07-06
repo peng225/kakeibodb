@@ -122,13 +122,14 @@ func sortEventsByDate(events []*model.Event) {
 
 func (er *EventRepository) ListOutcomes(from, to time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
+	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListOutcomeEvents(ctx, query.ListOutcomeEventsParams{
 		FromDt: sql.NullTime{
 			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  to,
+			Time:  toInclusive,
 			Valid: true,
 		},
 	})
@@ -171,13 +172,14 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time
 		}
 	}
 	ctx := context.Background()
+	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListOutcomeEventsWithTags(ctx, query.ListOutcomeEventsWithTagsParams{
 		FromDt: sql.NullTime{
 			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  to,
+			Time:  toInclusive,
 			Valid: true,
 		},
 		Tagnames: sqlTags,
@@ -210,13 +212,14 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time
 
 func (er *EventRepository) List(from, to time.Time) ([]*model.Event, error) {
 	ctx := context.Background()
+	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListEvents(ctx, query.ListEventsParams{
 		FromDt: sql.NullTime{
 			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  to,
+			Time:  toInclusive,
 			Valid: true,
 		},
 	})
@@ -255,13 +258,14 @@ func (er *EventRepository) ListWithTags(tagNames []string, from, to time.Time) (
 		}
 	}
 	ctx := context.Background()
+	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListEventsWithTags(ctx, query.ListEventsWithTagsParams{
 		FromDt: sql.NullTime{
 			Time:  from,
 			Valid: true,
 		},
 		ToDt: sql.NullTime{
-			Time:  to,
+			Time:  toInclusive,
 			Valid: true,
 		},
 		Tagnames: sqlTags,

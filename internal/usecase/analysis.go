@@ -135,7 +135,7 @@ func (au *AnalysisUseCase) TimeSeries(from, to time.Time, interval, window, top 
 	msGroupedByTagNameForEveryWindow := make([](map[string]int32), 0)
 	totalIncomeForEveryWindow := make([]int32, 0)
 	totalOutcomeForEveryWindow := make([]int32, 0)
-	for windowTo := from; windowTo.Before(to.AddDate(0, 0, 1)); windowTo = windowTo.AddDate(0, interval, 0) {
+	for windowTo := from; windowTo.Before(to); windowTo = windowTo.AddDate(0, interval, 0) {
 		windowFrom := windowTo.AddDate(0, -window, 0)
 		msGroupedByTagName, err := au.GetMoneySumGroupedByTagName(windowFrom, windowTo)
 		if err != nil {

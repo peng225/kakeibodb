@@ -43,7 +43,7 @@ func (er *EventFakeRepository) ListOutcomes(from, to time.Time) ([]*model.Event,
 		for _, event := range er.events {
 			if event.GetMoney() < 0 &&
 				(event.GetDate().Equal(from) || event.GetDate().After(from)) &&
-				(event.GetDate().Equal(to) || event.GetDate().Before(to)) &&
+				event.GetDate().Before(to) && // "to" is exclusive edge.
 				!yield(event) {
 				return
 			}
