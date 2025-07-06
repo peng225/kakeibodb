@@ -6,17 +6,6 @@ import (
 	"log/slog"
 )
 
-type PatternRepository interface {
-	Create(key string) (int64, error)
-	Delete(id int64) error
-	List() ([]*model.Pattern, error)
-}
-
-type PatternTagMapRepository interface {
-	Map(patternID int64, tagName string) error
-	Unmap(patternID int64, tagName string) error
-}
-
 type PatternPresenter interface {
 	Present(patterns []*model.Pattern)
 }

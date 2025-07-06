@@ -10,10 +10,6 @@ type AnalysisUseCase struct {
 	analysisPresenter AnalysisPresenter
 }
 
-type AnalysisPresenter interface {
-	Present(report *TimeSeriesReport)
-}
-
 func NewAnalysisUseCase(eventRepo EventRepository, analysisPresenter AnalysisPresenter) *AnalysisUseCase {
 	return &AnalysisUseCase{
 		eventRepo:         eventRepo,

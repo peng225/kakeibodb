@@ -5,12 +5,6 @@ import (
 	"kakeibodb/internal/model"
 )
 
-type TagRepository interface {
-	Create(tag string) (int64, error)
-	Delete(id int64) error
-	List() ([]*model.Tag, error)
-}
-
 type TagPresenter interface {
 	Present(tags []*model.Tag)
 }
