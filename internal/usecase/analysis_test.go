@@ -44,12 +44,12 @@ func TestGetMoneySumGroupedByTagName_BoundaryCheck(t *testing.T) {
 		Desc:  "apple",
 	})
 	fakeEventRepo.Create(&usecase.EventCreateRequest{
-		Date:  time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local),
+		Date:  time.Date(2025, 6, 30, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
 	fakeEventRepo.Create(&usecase.EventCreateRequest{
-		Date:  time.Date(2025, 7, 2, 0, 0, 0, 0, time.Local),
+		Date:  time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})

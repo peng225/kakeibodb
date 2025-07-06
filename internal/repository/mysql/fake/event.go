@@ -38,12 +38,12 @@ func (er *EventFakeRepository) Delete(id int64) error {
 	return nil
 }
 
-func (er *EventFakeRepository) ListOutcomes(from, to *time.Time) ([]*model.Event, error) {
+func (er *EventFakeRepository) ListOutcomes(from, to time.Time) ([]*model.Event, error) {
 	seq := func(yield func(*model.Event) bool) {
 		for _, event := range er.events {
 			if event.GetMoney() < 0 &&
-				(event.GetDate().Equal(*from) || event.GetDate().After(*from)) &&
-				(event.GetDate().Equal(*to) || event.GetDate().Before(*to)) &&
+				(event.GetDate().Equal(from) || event.GetDate().After(from)) &&
+				event.GetDate().Before(to) && // "to" is exclusive edge.
 				!yield(event) {
 				return
 			}
@@ -54,17 +54,17 @@ func (er *EventFakeRepository) ListOutcomes(from, to *time.Time) ([]*model.Event
 	return matchedEvents, nil
 }
 
-func (er *EventFakeRepository) ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
+func (er *EventFakeRepository) ListOutcomesWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
 	// Not implemented.
 	return nil, nil
 }
 
-func (er *EventFakeRepository) List(from, to *time.Time) ([]*model.Event, error) {
+func (er *EventFakeRepository) List(from, to time.Time) ([]*model.Event, error) {
 	// Not implemented.
 	return nil, nil
 }
 
-func (er *EventFakeRepository) ListWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error) {
+func (er *EventFakeRepository) ListWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
 	// Not implemented.
 	return nil, nil
 }

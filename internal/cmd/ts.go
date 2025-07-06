@@ -68,7 +68,7 @@ to quickly create a Cobra application.`,
 		eventRepo := mysql.NewEventRepository(db)
 		analysysPresenter := console.NewAnalysisPresenter()
 		analysisUC := usecase.NewAnalysisUseCase(eventRepo, analysysPresenter)
-		err = analysisUC.TimeSeries(from, to, interval, window, top)
+		err = analysisUC.TimeSeries(*from, *to, interval, window, top)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

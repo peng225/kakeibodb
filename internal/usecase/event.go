@@ -24,10 +24,10 @@ type EventRepository interface {
 	GetWithoutTags(id int64) (*model.Event, error)
 	UpdateMoney(id int64, money int32) error
 	Delete(id int64) error
-	ListOutcomes(from, to *time.Time) ([]*model.Event, error)
-	ListOutcomesWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error)
-	List(from, to *time.Time) ([]*model.Event, error)
-	ListWithTags(tagNames []string, from, to *time.Time) ([]*model.Event, error)
+	ListOutcomes(from, to time.Time) ([]*model.Event, error)
+	ListOutcomesWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error)
+	List(from, to time.Time) ([]*model.Event, error)
+	ListWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error)
 }
 
 type EventTagMapRepository interface {
@@ -242,7 +242,7 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEven
 func (eu *EventUseCase) getEventIDFromSplitBaseTag(splitBaseTagName string,
 	date time.Time) (int64, error) {
 	from := date.AddDate(0, -2, -5)
-	events, err := eu.eventRepo.ListOutcomesWithTags([]string{splitBaseTagName}, &from, &date)
+	events, err := eu.eventRepo.ListOutcomesWithTags([]string{splitBaseTagName}, from, date)
 	if err != nil {
 		return 0, err
 	}
@@ -297,7 +297,7 @@ func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.
 	return nil
 }
 
-func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time.Time) error {
+func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to time.Time) error {
 	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
@@ -316,7 +316,7 @@ func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to *time
 	return nil
 }
 
-func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to *time.Time) error {
+func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to time.Time) error {
 	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
@@ -353,7 +353,7 @@ func (etmu *EventTagMapUsecase) RemoveTag(eventID int64, tagName string) error {
 	return nil
 }
 
-func (apu *ApplyPatternUseCase) ApplyPattern(from, to *time.Time) error {
+func (apu *ApplyPatternUseCase) ApplyPattern(from, to time.Time) error {
 	events, err := apu.eventRepo.List(from, to)
 	if err != nil {
 		return err
