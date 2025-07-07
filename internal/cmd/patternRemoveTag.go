@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 	"log/slog"
@@ -39,7 +40,8 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		ptmRepo := mysql.NewPatternTagMapRepository(db)
 		ptmUC := usecase.NewPatternTagMapUseCase(ptmRepo)
-		err = ptmUC.RemoveTag(patternID, tagName)
+		ctx := context.Background()
+		err = ptmUC.RemoveTag(ctx, patternID, tagName)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

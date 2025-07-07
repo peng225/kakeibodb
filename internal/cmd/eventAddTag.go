@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -40,7 +41,8 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		etmUC := usecase.NewEventTagMapUseCase(etmRepo)
-		err = etmUC.AddTag(eventID, tagNames)
+		ctx := context.Background()
+		err = etmUC.AddTag(ctx, eventID, tagNames)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

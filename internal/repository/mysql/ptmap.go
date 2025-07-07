@@ -18,8 +18,7 @@ func NewPatternTagMapRepository(db *sql.DB) *PatternTagMapRepository {
 	}
 }
 
-func (ptmr *PatternTagMapRepository) Map(patternID int64, tagName string) error {
-	ctx := context.Background()
+func (ptmr *PatternTagMapRepository) Map(ctx context.Context, patternID int64, tagName string) error {
 	res, err := ptmr.q.GetTag(ctx, sql.NullString{
 		String: tagName,
 		Valid:  true,
@@ -61,8 +60,7 @@ func (ptmr *PatternTagMapRepository) Map(patternID int64, tagName string) error 
 	return nil
 }
 
-func (ptmr *PatternTagMapRepository) Unmap(patternID int64, tagName string) error {
-	ctx := context.Background()
+func (ptmr *PatternTagMapRepository) Unmap(ctx context.Context, patternID int64, tagName string) error {
 	res, err := ptmr.q.GetTag(ctx, sql.NullString{
 		String: tagName,
 		Valid:  true,

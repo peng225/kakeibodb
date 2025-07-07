@@ -16,7 +16,7 @@ func NewEventPresenter() *EventPresenter {
 func (ep *EventPresenter) Present(events []*model.Event) {
 	fmt.Printf("%s\t%s\t%s\t%s\t%s\n", "ID", "date      ", "money   ", "description                     ", "tags")
 	for _, e := range events {
-		tagsToPrint := "NONE"
+		tagsToPrint := model.EmptyTagName
 		if len(e.GetTagNames()) != 0 {
 			tagsToPrint = strings.Join(e.GetTagNames(), ",")
 		}

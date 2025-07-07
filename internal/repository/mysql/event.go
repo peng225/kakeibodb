@@ -22,8 +22,7 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 	}
 }
 
-func (er *EventRepository) Create(req *usecase.EventCreateRequest) (int64, error) {
-	ctx := context.Background()
+func (er *EventRepository) Create(ctx context.Context, req *usecase.EventCreateRequest) (int64, error) {
 	event, err := er.getByContent(ctx, req.Date, req.Money, req.Desc)
 	if err == nil {
 		return event.GetID(), nil
@@ -76,8 +75,7 @@ func (er *EventRepository) getByContent(ctx context.Context, date time.Time, mon
 	), nil
 }
 
-func (er *EventRepository) GetWithoutTags(id int64) (*model.Event, error) {
-	ctx := context.Background()
+func (er *EventRepository) GetWithoutTags(ctx context.Context, id int64) (*model.Event, error) {
 	res, err := er.q.GetEventByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get event by ID: %w", err)
@@ -85,8 +83,7 @@ func (er *EventRepository) GetWithoutTags(id int64) (*model.Event, error) {
 	return model.NewEvent(res.ID, res.Dt.Time, res.Money.Int32, res.Description.String, nil), nil
 }
 
-func (er *EventRepository) UpdateMoney(id int64, money int32) error {
-	ctx := context.Background()
+func (er *EventRepository) UpdateMoney(ctx context.Context, id int64, money int32) error {
 	err := er.q.UpdateEventMoney(ctx, query.UpdateEventMoneyParams{
 		ID: id,
 		Money: sql.NullInt32{
@@ -100,8 +97,7 @@ func (er *EventRepository) UpdateMoney(id int64, money int32) error {
 	return nil
 }
 
-func (er *EventRepository) Delete(id int64) error {
-	ctx := context.Background()
+func (er *EventRepository) Delete(ctx context.Context, id int64) error {
 	err := er.q.DeleteEventByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete event by ID: %w", err)
@@ -120,8 +116,7 @@ func sortEventsByDate(events []*model.Event) {
 	})
 }
 
-func (er *EventRepository) ListOutcomes(from, to time.Time) ([]*model.Event, error) {
-	ctx := context.Background()
+func (er *EventRepository) ListOutcomes(ctx context.Context, from, to time.Time) ([]*model.Event, error) {
 	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListOutcomeEvents(ctx, query.ListOutcomeEventsParams{
 		FromDt: sql.NullTime{
@@ -163,7 +158,8 @@ func (er *EventRepository) ListOutcomes(from, to time.Time) ([]*model.Event, err
 	return events, nil
 }
 
-func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
+func (er *EventRepository) ListOutcomesWithTags(ctx context.Context, tagNames []string,
+	from, to time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -171,7 +167,6 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time
 			Valid:  true,
 		}
 	}
-	ctx := context.Background()
 	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListOutcomeEventsWithTags(ctx, query.ListOutcomeEventsWithTagsParams{
 		FromDt: sql.NullTime{
@@ -210,8 +205,7 @@ func (er *EventRepository) ListOutcomesWithTags(tagNames []string, from, to time
 	return events, nil
 }
 
-func (er *EventRepository) List(from, to time.Time) ([]*model.Event, error) {
-	ctx := context.Background()
+func (er *EventRepository) List(ctx context.Context, from, to time.Time) ([]*model.Event, error) {
 	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListEvents(ctx, query.ListEventsParams{
 		FromDt: sql.NullTime{
@@ -249,7 +243,8 @@ func (er *EventRepository) List(from, to time.Time) ([]*model.Event, error) {
 	return events, nil
 }
 
-func (er *EventRepository) ListWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error) {
+func (er *EventRepository) ListWithTags(ctx context.Context, tagNames []string,
+	from, to time.Time) ([]*model.Event, error) {
 	sqlTags := make([]sql.NullString, len(tagNames))
 	for i, tagName := range tagNames {
 		sqlTags[i] = sql.NullString{
@@ -257,7 +252,6 @@ func (er *EventRepository) ListWithTags(tagNames []string, from, to time.Time) (
 			Valid:  true,
 		}
 	}
-	ctx := context.Background()
 	toInclusive := to.AddDate(0, 0, -1)
 	res, err := er.q.ListEventsWithTags(ctx, query.ListEventsWithTagsParams{
 		FromDt: sql.NullTime{

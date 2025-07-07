@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 	"log/slog"
@@ -39,7 +40,8 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		etmUC := usecase.NewEventTagMapUseCase(etmRepo)
-		err = etmUC.RemoveTag(eventID, tagName)
+		ctx := context.Background()
+		err = etmUC.RemoveTag(ctx, eventID, tagName)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

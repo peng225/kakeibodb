@@ -19,8 +19,7 @@ func NewTagRepository(db *sql.DB) *TagRepository {
 	}
 }
 
-func (tr *TagRepository) Create(tagName string) (int64, error) {
-	ctx := context.Background()
+func (tr *TagRepository) Create(ctx context.Context, tagName string) (int64, error) {
 	tag, err := tr.get(ctx, tagName)
 	if err == nil {
 		return tag.GetID(), nil
@@ -49,8 +48,7 @@ func (tr *TagRepository) get(ctx context.Context, tagName string) (*model.Tag, e
 	return model.NewTag(ret.ID, ret.Name.String), nil
 }
 
-func (tr *TagRepository) Delete(id int64) error {
-	ctx := context.Background()
+func (tr *TagRepository) Delete(ctx context.Context, id int64) error {
 	err := tr.q.DeleteTagByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete tag by ID: %w", err)
@@ -58,8 +56,7 @@ func (tr *TagRepository) Delete(id int64) error {
 	return nil
 }
 
-func (tr *TagRepository) List() ([]*model.Tag, error) {
-	ctx := context.Background()
+func (tr *TagRepository) List(ctx context.Context) ([]*model.Tag, error) {
 	res, err := tr.q.ListTags(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tags: %w", err)

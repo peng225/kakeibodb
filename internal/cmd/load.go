@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -51,6 +52,7 @@ to quickly create a Cobra application.`,
 		eventRepo := mysql.NewEventRepository(db)
 		eventUC := usecase.NewEventUseCase(eventRepo)
 
+		ctx := context.Background()
 		if credit {
 			if file == "" {
 				slog.Error("File path must be specified for credit mode.")
@@ -60,12 +62,12 @@ to quickly create a Cobra application.`,
 				slog.Error("Invalid argument.", "parentEventID", parentEventID)
 				os.Exit(1)
 			}
-			err = eventUC.LoadCreditFromFile(file, parentEventID)
+			err = eventUC.LoadCreditFromFile(ctx, file, parentEventID)
 		} else {
 			if file != "" {
-				err = eventUC.LoadFromFile(file)
+				err = eventUC.LoadFromFile(ctx, file)
 			} else {
-				err = eventUC.LoadFromDir(dir)
+				err = eventUC.LoadFromDir(ctx, dir)
 			}
 		}
 		if err != nil {

@@ -19,8 +19,7 @@ func NewPatternRepository(db *sql.DB) *PatternRepository {
 	}
 }
 
-func (pr *PatternRepository) Create(key string) (int64, error) {
-	ctx := context.Background()
+func (pr *PatternRepository) Create(ctx context.Context, key string) (int64, error) {
 	pattern, err := pr.getByKey(ctx, key)
 	if err == nil {
 		return pattern.GetID(), nil
@@ -48,8 +47,7 @@ func (pr *PatternRepository) getByKey(ctx context.Context, key string) (*model.P
 	return model.NewPattern(res.ID, res.KeyString.String, nil), nil
 }
 
-func (pr *PatternRepository) Delete(id int64) error {
-	ctx := context.Background()
+func (pr *PatternRepository) Delete(ctx context.Context, id int64) error {
 	err := pr.q.DeletePatternByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete pattern by ID: %w", err)
@@ -57,8 +55,7 @@ func (pr *PatternRepository) Delete(id int64) error {
 	return nil
 }
 
-func (pr *PatternRepository) List() ([]*model.Pattern, error) {
-	ctx := context.Background()
+func (pr *PatternRepository) List(ctx context.Context) ([]*model.Pattern, error) {
 	res, err := pr.q.ListPatterns(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list patterns: %w", err)

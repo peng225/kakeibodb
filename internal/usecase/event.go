@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"kakeibodb/internal/event"
 	"kakeibodb/internal/model"
@@ -17,26 +18,6 @@ type EventCreateRequest struct {
 	Date  time.Time
 	Money int32
 	Desc  string
-}
-
-type EventRepository interface {
-	Create(req *EventCreateRequest) (int64, error)
-	GetWithoutTags(id int64) (*model.Event, error)
-	UpdateMoney(id int64, money int32) error
-	Delete(id int64) error
-	ListOutcomes(from, to time.Time) ([]*model.Event, error)
-	ListOutcomesWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error)
-	List(from, to time.Time) ([]*model.Event, error)
-	ListWithTags(tagNames []string, from, to time.Time) ([]*model.Event, error)
-}
-
-type EventTagMapRepository interface {
-	Map(eventID int64, tagName string) error
-	Unmap(eventID int64, tagName string) error
-}
-
-type EventPresenter interface {
-	Present(events []*model.Event)
 }
 
 type EventUseCase struct {
@@ -86,7 +67,7 @@ func NewApplyPatternUseCase(eventRepo EventRepository, etmRepo EventTagMapReposi
 	}
 }
 
-func (eu *EventUseCase) LoadFromFile(file string) error {
+func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 	// FIXME: Don't want to depend on a specific file format.
 	csv := event.NewCSV()
 	csv.Open(file)
@@ -126,7 +107,7 @@ func (eu *EventUseCase) LoadFromFile(file string) error {
 		}
 		slog.Info("Create value.", "date", date,
 			"money", money, "desc", desc)
-		_, err = eu.eventRepo.Create(&EventCreateRequest{
+		_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
 			Date:  *date,
 			Money: money,
 			Desc:  model.FormatDesc(desc),
@@ -138,7 +119,7 @@ func (eu *EventUseCase) LoadFromFile(file string) error {
 	return nil
 }
 
-func (eu *EventUseCase) LoadFromDir(dir string) error {
+func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
 	var files []string
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -162,7 +143,7 @@ func (eu *EventUseCase) LoadFromDir(dir string) error {
 	}
 
 	for _, file := range files {
-		err = eu.LoadFromFile(file)
+		err = eu.LoadFromFile(ctx, file)
 		if err != nil {
 			return err
 		}
@@ -170,13 +151,13 @@ func (eu *EventUseCase) LoadFromDir(dir string) error {
 	return nil
 }
 
-func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) error {
+func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, relatedEventID int64) error {
 	csv := event.NewCSV()
 	csv.Open(file)
 
 	slog.Info("Load credit events from file.", "file", file)
 
-	relatedEvent, err := eu.eventRepo.GetWithoutTags(relatedEventID)
+	relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
 	if err != nil {
 		return fmt.Errorf("failed to get tag: %w", err)
 	}
@@ -218,12 +199,12 @@ func (eu *EventUseCase) LoadCreditFromFile(file string, relatedEventID int64) er
 	for _, cecReq := range creditEventCreateReqs {
 		slog.Info("Create value.", "date", cecReq.Date,
 			"money", cecReq.Money, "desc", cecReq.Desc)
-		_, err = eu.eventRepo.Create(cecReq)
+		_, err = eu.eventRepo.Create(ctx, cecReq)
 		if err != nil {
 			return fmt.Errorf("failed to create event: %w", err)
 		}
 	}
-	err = eu.eventRepo.Delete(relatedEventID)
+	err = eu.eventRepo.Delete(ctx, relatedEventID)
 	if err != nil {
 		return fmt.Errorf("failed to delete event: %w", err)
 	}
@@ -239,27 +220,28 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEven
 	return moneySum == relatedEventMoney
 }
 
-func (eu *EventUseCase) getEventIDFromSplitBaseTag(splitBaseTagName string,
+func (eu *EventUseCase) getEventIDFromSplitBaseTag(ctx context.Context, splitBaseTagName string,
 	date time.Time) (int64, error) {
 	from := date.AddDate(0, -2, -5)
-	events, err := eu.eventRepo.ListOutcomesWithTags([]string{splitBaseTagName}, from, date)
+	events, err := eu.eventRepo.ListOutcomesWithTags(ctx, []string{splitBaseTagName}, from, date)
 	if err != nil {
 		return 0, err
 	}
 	return events[len(events)-1].GetID(), nil
 }
 
-func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.Time, money int32, desc string) error {
+func (eu *EventUseCase) Split(ctx context.Context, eventID int64, splitBaseTagName string,
+	date time.Time, money int32, desc string) error {
 	if eventID == -1 {
 		var err error
-		eventID, err = eu.getEventIDFromSplitBaseTag(splitBaseTagName, date)
+		eventID, err = eu.getEventIDFromSplitBaseTag(ctx, splitBaseTagName, date)
 		if err != nil {
 			return err
 		}
 		slog.Info("Auto detected.", "eventID", eventID)
 	}
 
-	event, err := eu.eventRepo.GetWithoutTags(eventID)
+	event, err := eu.eventRepo.GetWithoutTags(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("failed to get event: %w", err)
 	}
@@ -274,19 +256,19 @@ func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.
 
 	// Update the existing event.
 	if event.GetMoney() == money {
-		err = eu.eventRepo.Delete(eventID)
+		err = eu.eventRepo.Delete(ctx, eventID)
 		if err != nil {
 			return fmt.Errorf("failed to delete event: %w", err)
 		}
 	} else {
-		err = eu.eventRepo.UpdateMoney(eventID, event.GetMoney()-money)
+		err = eu.eventRepo.UpdateMoney(ctx, eventID, event.GetMoney()-money)
 		if err != nil {
 			return fmt.Errorf("failed to update event money: %w", err)
 		}
 	}
 
 	// Insert a new event.
-	_, err = eu.eventRepo.Create(&EventCreateRequest{
+	_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
 		Date:  date,
 		Money: money,
 		Desc:  model.FormatDesc(desc),
@@ -297,16 +279,16 @@ func (eu *EventUseCase) Split(eventID int64, splitBaseTagName string, date time.
 	return nil
 }
 
-func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to time.Time) error {
+func (eu *EventPresentUseCase) PresentOutcomes(ctx context.Context, tagNames []string, from, to time.Time) error {
 	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
-		events, err = eu.eventRepo.ListOutcomes(from, to)
+		events, err = eu.eventRepo.ListOutcomes(ctx, from, to)
 		if err != nil {
 			return fmt.Errorf("failed to list outcome events: %w", err)
 		}
 	} else {
-		events, err = eu.eventRepo.ListOutcomesWithTags(tagNames, from, to)
+		events, err = eu.eventRepo.ListOutcomesWithTags(ctx, tagNames, from, to)
 		if err != nil {
 			return fmt.Errorf("failed to list outcome events with tags: %w", err)
 		}
@@ -316,16 +298,16 @@ func (eu *EventPresentUseCase) PresentOutcomes(tagNames []string, from, to time.
 	return nil
 }
 
-func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to time.Time) error {
+func (eu *EventPresentUseCase) PresentAll(ctx context.Context, tagNames []string, from, to time.Time) error {
 	var events []*model.Event
 	var err error
 	if len(tagNames) == 0 {
-		events, err = eu.eventRepo.List(from, to)
+		events, err = eu.eventRepo.List(ctx, from, to)
 		if err != nil {
 			return fmt.Errorf("failed to list all events: %w", err)
 		}
 	} else {
-		events, err = eu.eventRepo.ListWithTags(tagNames, from, to)
+		events, err = eu.eventRepo.ListWithTags(ctx, tagNames, from, to)
 		if err != nil {
 			return fmt.Errorf("failed to list all events with tags: %w", err)
 		}
@@ -335,9 +317,9 @@ func (eu *EventPresentUseCase) PresentAll(tagNames []string, from, to time.Time)
 	return nil
 }
 
-func (etmu *EventTagMapUsecase) AddTag(eventID int64, tagNames []string) error {
+func (etmu *EventTagMapUsecase) AddTag(ctx context.Context, eventID int64, tagNames []string) error {
 	for _, tagName := range tagNames {
-		err := etmu.etmRepo.Map(eventID, tagName)
+		err := etmu.etmRepo.Map(ctx, eventID, tagName)
 		if err != nil {
 			return fmt.Errorf("failed to add tag: %w", err)
 		}
@@ -345,21 +327,21 @@ func (etmu *EventTagMapUsecase) AddTag(eventID int64, tagNames []string) error {
 	return nil
 }
 
-func (etmu *EventTagMapUsecase) RemoveTag(eventID int64, tagName string) error {
-	err := etmu.etmRepo.Unmap(eventID, tagName)
+func (etmu *EventTagMapUsecase) RemoveTag(ctx context.Context, eventID int64, tagName string) error {
+	err := etmu.etmRepo.Unmap(ctx, eventID, tagName)
 	if err != nil {
 		return fmt.Errorf("failed to add tag: %w", err)
 	}
 	return nil
 }
 
-func (apu *ApplyPatternUseCase) ApplyPattern(from, to time.Time) error {
-	events, err := apu.eventRepo.List(from, to)
+func (apu *ApplyPatternUseCase) ApplyPattern(ctx context.Context, from, to time.Time) error {
+	events, err := apu.eventRepo.List(ctx, from, to)
 	if err != nil {
 		return err
 	}
 
-	patterns, err := apu.patternRepo.List()
+	patterns, err := apu.patternRepo.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -368,7 +350,7 @@ func (apu *ApplyPatternUseCase) ApplyPattern(from, to time.Time) error {
 		for _, pattern := range patterns {
 			if strings.Contains(event.GetDesc(), pattern.GetKey()) {
 				for _, tagName := range pattern.GetTagNames() {
-					err = apu.etmRepo.Map(event.GetID(), tagName)
+					err = apu.etmRepo.Map(ctx, event.GetID(), tagName)
 					if err != nil {
 						return err
 					}

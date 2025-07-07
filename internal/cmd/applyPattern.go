@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -54,7 +55,8 @@ to quickly create a Cobra application.`,
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		patternRepo := mysql.NewPatternRepository(db)
 		apUC := usecase.NewApplyPatternUseCase(eventRepo, etmRepo, patternRepo)
-		err = apUC.ApplyPattern(*from, *to)
+		ctx := context.Background()
+		err = apUC.ApplyPattern(ctx, *from, *to)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

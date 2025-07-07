@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"kakeibodb/internal/presenter/console"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
@@ -30,7 +31,8 @@ to quickly create a Cobra application.`,
 		patternRepo := mysql.NewPatternRepository(db)
 		patternPresenter := console.NewPatternPresenter()
 		patternUC := usecase.NewPatternPresentUseCase(patternRepo, patternPresenter)
-		err = patternUC.List()
+		ctx := context.Background()
+		err = patternUC.List(ctx)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)

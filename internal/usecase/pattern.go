@@ -1,21 +1,11 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"kakeibodb/internal/model"
 	"log/slog"
 )
-
-type PatternRepository interface {
-	Create(key string) (int64, error)
-	Delete(id int64) error
-	List() ([]*model.Pattern, error)
-}
-
-type PatternTagMapRepository interface {
-	Map(patternID int64, tagName string) error
-	Unmap(patternID int64, tagName string) error
-}
 
 type PatternPresenter interface {
 	Present(patterns []*model.Pattern)
@@ -53,8 +43,8 @@ func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsec
 	}
 }
 
-func (pu *PatternUseCase) Create(key string) error {
-	id, err := pu.patternRepo.Create(key)
+func (pu *PatternUseCase) Create(ctx context.Context, key string) error {
+	id, err := pu.patternRepo.Create(ctx, key)
 	if err != nil {
 		return fmt.Errorf("failed to create pattern: %w", err)
 	}
@@ -62,16 +52,16 @@ func (pu *PatternUseCase) Create(key string) error {
 	return nil
 }
 
-func (pu *PatternUseCase) Delete(id int64) error {
-	err := pu.patternRepo.Delete(id)
+func (pu *PatternUseCase) Delete(ctx context.Context, id int64) error {
+	err := pu.patternRepo.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete pattern: %w", err)
 	}
 	return nil
 }
 
-func (pu *PatternPresentUseCase) List() error {
-	tags, err := pu.patternRepo.List()
+func (pu *PatternPresentUseCase) List(ctx context.Context) error {
+	tags, err := pu.patternRepo.List(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list patterns: %w", err)
 	}
@@ -80,9 +70,9 @@ func (pu *PatternPresentUseCase) List() error {
 	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) AddTag(patternID int64, tagNames []string) error {
+func (ptmu *PatternTagMapUsecase) AddTag(ctx context.Context, patternID int64, tagNames []string) error {
 	for _, tagName := range tagNames {
-		err := ptmu.ptmRepo.Map(patternID, tagName)
+		err := ptmu.ptmRepo.Map(ctx, patternID, tagName)
 		if err != nil {
 			return fmt.Errorf("failed to add tag: %w", err)
 		}
@@ -90,8 +80,8 @@ func (ptmu *PatternTagMapUsecase) AddTag(patternID int64, tagNames []string) err
 	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) RemoveTag(patternID int64, tagName string) error {
-	err := ptmu.ptmRepo.Unmap(patternID, tagName)
+func (ptmu *PatternTagMapUsecase) RemoveTag(ctx context.Context, patternID int64, tagName string) error {
+	err := ptmu.ptmRepo.Unmap(ctx, patternID, tagName)
 	if err != nil {
 		return fmt.Errorf("failed to remove tag: %w", err)
 	}

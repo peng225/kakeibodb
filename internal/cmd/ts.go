@@ -4,6 +4,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -68,7 +69,8 @@ to quickly create a Cobra application.`,
 		eventRepo := mysql.NewEventRepository(db)
 		analysysPresenter := console.NewAnalysisPresenter()
 		analysisUC := usecase.NewAnalysisUseCase(eventRepo, analysysPresenter)
-		err = analysisUC.TimeSeries(*from, *to, interval, window, top)
+		ctx := context.Background()
+		err = analysisUC.TimeSeries(ctx, *from, *to, interval, window, top)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)
