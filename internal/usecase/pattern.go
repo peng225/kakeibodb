@@ -20,7 +20,7 @@ type PatternPresentUseCase struct {
 	patternPresenter PatternPresenter
 }
 
-type PatternTagMapUsecase struct {
+type PatternTagMapUseCase struct {
 	ptmRepo PatternTagMapRepository
 }
 
@@ -37,8 +37,8 @@ func NewPatternPresentUseCase(patternRepo PatternRepository, patternPresenter Pa
 	}
 }
 
-func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUsecase {
-	return &PatternTagMapUsecase{
+func NewPatternTagMapUseCase(ptmRepo PatternTagMapRepository) *PatternTagMapUseCase {
+	return &PatternTagMapUseCase{
 		ptmRepo: ptmRepo,
 	}
 }
@@ -70,7 +70,7 @@ func (pu *PatternPresentUseCase) List(ctx context.Context) error {
 	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) AddTag(ctx context.Context, patternID int64, tagNames []string) error {
+func (ptmu *PatternTagMapUseCase) AddTag(ctx context.Context, patternID int64, tagNames []string) error {
 	for _, tagName := range tagNames {
 		err := ptmu.ptmRepo.Map(ctx, patternID, tagName)
 		if err != nil {
@@ -80,7 +80,7 @@ func (ptmu *PatternTagMapUsecase) AddTag(ctx context.Context, patternID int64, t
 	return nil
 }
 
-func (ptmu *PatternTagMapUsecase) RemoveTag(ctx context.Context, patternID int64, tagName string) error {
+func (ptmu *PatternTagMapUseCase) RemoveTag(ctx context.Context, patternID int64, tagName string) error {
 	err := ptmu.ptmRepo.Unmap(ctx, patternID, tagName)
 	if err != nil {
 		return fmt.Errorf("failed to remove tag: %w", err)

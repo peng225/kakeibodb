@@ -54,7 +54,8 @@ to quickly create a Cobra application.`,
 		eventRepo := mysql.NewEventRepository(db)
 		etmRepo := mysql.NewEventTagMapRepository(db)
 		patternRepo := mysql.NewPatternRepository(db)
-		apUC := usecase.NewApplyPatternUseCase(eventRepo, etmRepo, patternRepo)
+		tx := mysql.NewTransaction(db)
+		apUC := usecase.NewApplyPatternUseCase(eventRepo, etmRepo, patternRepo, tx)
 		ctx := context.Background()
 		err = apUC.ApplyPattern(ctx, *from, *to)
 		if err != nil {
