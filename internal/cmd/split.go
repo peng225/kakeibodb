@@ -34,14 +34,14 @@ to quickly create a Cobra application.`,
 		// The env can be empty string. That is also OK.
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		eventID, err := cmd.Flags().GetInt64("eventID")
+		eventIDs, err := cmd.Flags().GetInt64Slice("eventIDs")
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)
 		}
-		if eventID == -1 && splitBaseTagName == "" {
+		if len(eventIDs) == 0 && splitBaseTagName == "" {
 			slog.Error(
-				fmt.Sprintf("Either --eventID flag or %s env should be set.",
+				fmt.Sprintf("Either --eventIDs flag or %s env should be set.",
 					envSplitBaseTagName),
 			)
 			os.Exit(1)
@@ -78,7 +78,7 @@ to quickly create a Cobra application.`,
 		tx := mysql.NewTransaction(db)
 		eventUC := usecase.NewEventUseCase(eventRepo, tx)
 		ctx := context.Background()
-		err = eventUC.Split(ctx, eventID, splitBaseTagName, *date, money, desc)
+		err = eventUC.Split(ctx, eventIDs, splitBaseTagName, *date, money, desc)
 		if err != nil {
 			slog.Error(err.Error())
 			os.Exit(1)
@@ -98,7 +98,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// splitCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	splitCmd.Flags().Int64("eventID", -1, "The event ID to be split")
+	splitCmd.Flags().Int64Slice("eventIDs", []int64{}, "The list of event ID(s) to be split")
 	splitCmd.Flags().String("date", "", "Date of the new event (YYYY-MM-DD or YYYY/MM/DD)")
 	splitCmd.Flags().Int32("money", -1, "Money of the new event")
 	splitCmd.Flags().String("desc", "", "Description of the new event")
