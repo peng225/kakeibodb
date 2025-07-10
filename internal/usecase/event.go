@@ -22,10 +22,11 @@ type EventCreateRequest struct {
 
 type EventUseCase struct {
 	eventRepo EventRepository
+	tx        Transaction
 }
 
 type EventPresentUseCase struct {
-	EventUseCase
+	eventRepo      EventRepository
 	eventPresenter EventPresenter
 }
 
@@ -35,19 +36,20 @@ type EventTagMapUsecase struct {
 
 type ApplyPatternUseCase struct {
 	EventUseCase
-	EventTagMapUsecase
+	etmRepo     EventTagMapRepository
 	patternRepo PatternRepository
 }
 
-func NewEventUseCase(eventRepo EventRepository) *EventUseCase {
+func NewEventUseCase(eventRepo EventRepository, tx Transaction) *EventUseCase {
 	return &EventUseCase{
 		eventRepo: eventRepo,
+		tx:        tx,
 	}
 }
 
 func NewEventPresentUseCase(eventRepo EventRepository, eventPresenter EventPresenter) *EventPresentUseCase {
 	return &EventPresentUseCase{
-		EventUseCase:   *NewEventUseCase(eventRepo),
+		eventRepo:      eventRepo,
 		eventPresenter: eventPresenter,
 	}
 }
@@ -59,11 +61,11 @@ func NewEventTagMapUseCase(etmRepo EventTagMapRepository) *EventTagMapUsecase {
 }
 
 func NewApplyPatternUseCase(eventRepo EventRepository, etmRepo EventTagMapRepository,
-	patternRepo PatternRepository) *ApplyPatternUseCase {
+	patternRepo PatternRepository, tx Transaction) *ApplyPatternUseCase {
 	return &ApplyPatternUseCase{
-		EventUseCase:       *NewEventUseCase(eventRepo),
-		EventTagMapUsecase: *NewEventTagMapUseCase(etmRepo),
-		patternRepo:        patternRepo,
+		EventUseCase: *NewEventUseCase(eventRepo, tx),
+		etmRepo:      etmRepo,
+		patternRepo:  patternRepo,
 	}
 }
 
@@ -76,47 +78,51 @@ func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 
 	// Skip header
 	_ = csv.Read()
-	for {
-		event := csv.Read()
-		if event == nil {
-			break
-		}
-		date, err := model.ParseDate(event[0])
-		if err != nil {
-			return fmt.Errorf("failed to parse date: %w", err)
-		}
-		decrease := event[1]
-		increase := event[2]
-		desc := event[3]
+	err := eu.tx.Do(ctx, func(ctx context.Context) error {
+		for {
+			event := csv.Read()
+			if event == nil {
+				break
+			}
+			date, err := model.ParseDate(event[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse date: %w", err)
+			}
+			decrease := event[1]
+			increase := event[2]
+			desc := event[3]
 
-		var money int32
-		if (decrease == "" && increase == "") || (decrease != "" && increase != "") {
-			return fmt.Errorf("bad event record. decrease = %s, increase = %s", decrease, increase)
-		} else if decrease != "" {
-			tmpMoney, err := strconv.ParseInt(decrease, 10, 32)
-			if err != nil {
-				return fmt.Errorf(`failed to parse "%s" as int: %w`, decrease, err)
+			var money int32
+			if (decrease == "" && increase == "") || (decrease != "" && increase != "") {
+				return fmt.Errorf("bad event record. decrease = %s, increase = %s", decrease, increase)
+			} else if decrease != "" {
+				tmpMoney, err := strconv.ParseInt(decrease, 10, 32)
+				if err != nil {
+					return fmt.Errorf(`failed to parse "%s" as int: %w`, decrease, err)
+				}
+				money = -1 * int32(tmpMoney)
+			} else {
+				tmpMoney, err := strconv.ParseInt(increase, 10, 32)
+				if err != nil {
+					return fmt.Errorf(`failed to parse "%s" as int: %w`, increase, err)
+				}
+				money = int32(tmpMoney)
 			}
-			money = -1 * int32(tmpMoney)
-		} else {
-			tmpMoney, err := strconv.ParseInt(increase, 10, 32)
+			slog.Info("Create value.", "date", date,
+				"money", money, "desc", desc)
+			_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
+				Date:  *date,
+				Money: money,
+				Desc:  model.FormatDesc(desc),
+			})
 			if err != nil {
-				return fmt.Errorf(`failed to parse "%s" as int: %w`, increase, err)
+				return fmt.Errorf("failed to create event: %w", err)
 			}
-			money = int32(tmpMoney)
 		}
-		slog.Info("Create value.", "date", date,
-			"money", money, "desc", desc)
-		_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
-			Date:  *date,
-			Money: money,
-			Desc:  model.FormatDesc(desc),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create event: %w", err)
-		}
-	}
-	return nil
+		return nil
+	})
+
+	return err
 }
 
 func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
@@ -157,58 +163,62 @@ func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, rel
 
 	slog.Info("Load credit events from file.", "file", file)
 
-	relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
-	if err != nil {
-		return fmt.Errorf("failed to get tag: %w", err)
-	}
-
-	// Skip header
-	_ = csv.Read()
-	creditEventCreateReqs := make([]*EventCreateRequest, 0)
-	for {
-		event := csv.Read()
-		if event == nil {
-			break
-		}
-
-		if event[0] == "" {
-			continue
-		}
-		date, err := model.ParseDate(event[0])
+	err := eu.tx.Do(ctx, func(ctx context.Context) error {
+		relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
 		if err != nil {
-			return fmt.Errorf("failed to parse date: %w", err)
+			return fmt.Errorf("failed to get tag: %w", err)
 		}
-		desc := event[1]
-		tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
-		if err != nil {
-			return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
-		}
-		tmpMoney *= -1
-		money := int32(tmpMoney)
 
-		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
-			Date:  *date,
-			Money: money,
-			Desc:  model.FormatDesc(desc),
-		})
-	}
+		// Skip header
+		_ = csv.Read()
+		creditEventCreateReqs := make([]*EventCreateRequest, 0)
+		for {
+			event := csv.Read()
+			if event == nil {
+				break
+			}
 
-	if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
-		return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
-	}
-	for _, cecReq := range creditEventCreateReqs {
-		slog.Info("Create value.", "date", cecReq.Date,
-			"money", cecReq.Money, "desc", cecReq.Desc)
-		_, err = eu.eventRepo.Create(ctx, cecReq)
-		if err != nil {
-			return fmt.Errorf("failed to create event: %w", err)
+			if event[0] == "" {
+				continue
+			}
+			date, err := model.ParseDate(event[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse date: %w", err)
+			}
+			desc := event[1]
+			tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
+			if err != nil {
+				return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
+			}
+			tmpMoney *= -1
+			money := int32(tmpMoney)
+
+			creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
+				Date:  *date,
+				Money: money,
+				Desc:  model.FormatDesc(desc),
+			})
 		}
-	}
-	err = eu.eventRepo.Delete(ctx, relatedEventID)
-	if err != nil {
-		return fmt.Errorf("failed to delete event: %w", err)
-	}
-	return nil
+
+		if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
+			return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
+		}
+
+		for _, cecReq := range creditEventCreateReqs {
+			slog.Info("Create value.", "date", cecReq.Date,
+				"money", cecReq.Money, "desc", cecReq.Desc)
+			_, err = eu.eventRepo.Create(ctx, cecReq)
+			if err != nil {
+				return fmt.Errorf("failed to create event: %w", err)
+			}
+		}
+		err = eu.eventRepo.Delete(ctx, relatedEventID)
+		if err != nil {
+			return fmt.Errorf("failed to delete event: %w", err)
+		}
+		return nil
+	})
+	return err
 }
 
 func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEventCreateReqs []*EventCreateRequest) bool {
@@ -254,29 +264,32 @@ func (eu *EventUseCase) Split(ctx context.Context, eventID int64, splitBaseTagNa
 			math.Abs(float64(event.GetMoney())), math.Abs(float64(money)))
 	}
 
-	// Update the existing event.
-	if event.GetMoney() == money {
-		err = eu.eventRepo.Delete(ctx, eventID)
-		if err != nil {
-			return fmt.Errorf("failed to delete event: %w", err)
+	err = eu.tx.Do(ctx, func(ctx context.Context) error {
+		// Update the existing event.
+		if event.GetMoney() == money {
+			err = eu.eventRepo.Delete(ctx, eventID)
+			if err != nil {
+				return fmt.Errorf("failed to delete event: %w", err)
+			}
+		} else {
+			err = eu.eventRepo.UpdateMoney(ctx, eventID, event.GetMoney()-money)
+			if err != nil {
+				return fmt.Errorf("failed to update event money: %w", err)
+			}
 		}
-	} else {
-		err = eu.eventRepo.UpdateMoney(ctx, eventID, event.GetMoney()-money)
-		if err != nil {
-			return fmt.Errorf("failed to update event money: %w", err)
-		}
-	}
 
-	// Insert a new event.
-	_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
-		Date:  date,
-		Money: money,
-		Desc:  model.FormatDesc(desc),
+		// Insert a new event.
+		_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
+			Date:  date,
+			Money: money,
+			Desc:  model.FormatDesc(desc),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create event: %w", err)
+		}
+		return nil
 	})
-	if err != nil {
-		return fmt.Errorf("failed to create event: %w", err)
-	}
-	return nil
+	return err
 }
 
 func (eu *EventPresentUseCase) PresentOutcomes(ctx context.Context, tagNames []string, from, to time.Time) error {
@@ -321,7 +334,7 @@ func (etmu *EventTagMapUsecase) AddTag(ctx context.Context, eventID int64, tagNa
 	for _, tagName := range tagNames {
 		err := etmu.etmRepo.Map(ctx, eventID, tagName)
 		if err != nil {
-			return fmt.Errorf("failed to add tag: %w", err)
+			return fmt.Errorf("failed to remove tag: %w", err)
 		}
 	}
 	return nil
@@ -332,31 +345,34 @@ func (etmu *EventTagMapUsecase) RemoveTag(ctx context.Context, eventID int64, ta
 	if err != nil {
 		return fmt.Errorf("failed to add tag: %w", err)
 	}
-	return nil
+	return err
 }
 
 func (apu *ApplyPatternUseCase) ApplyPattern(ctx context.Context, from, to time.Time) error {
-	events, err := apu.eventRepo.List(ctx, from, to)
-	if err != nil {
-		return err
-	}
+	err := apu.tx.Do(ctx, func(ctx context.Context) error {
+		events, err := apu.eventRepo.List(ctx, from, to)
+		if err != nil {
+			return err
+		}
 
-	patterns, err := apu.patternRepo.List(ctx)
-	if err != nil {
-		return err
-	}
+		patterns, err := apu.patternRepo.List(ctx)
+		if err != nil {
+			return err
+		}
 
-	for _, event := range events {
-		for _, pattern := range patterns {
-			if strings.Contains(event.GetDesc(), pattern.GetKey()) {
-				for _, tagName := range pattern.GetTagNames() {
-					err = apu.etmRepo.Map(ctx, event.GetID(), tagName)
-					if err != nil {
-						return err
+		for _, event := range events {
+			for _, pattern := range patterns {
+				if strings.Contains(event.GetDesc(), pattern.GetKey()) {
+					for _, tagName := range pattern.GetTagNames() {
+						err = apu.etmRepo.Map(ctx, event.GetID(), tagName)
+						if err != nil {
+							return err
+						}
 					}
 				}
 			}
 		}
-	}
-	return nil
+		return nil
+	})
+	return err
 }

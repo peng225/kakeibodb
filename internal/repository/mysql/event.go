@@ -23,14 +23,19 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 }
 
 func (er *EventRepository) Create(ctx context.Context, req *usecase.EventCreateRequest) (int64, error) {
-	event, err := er.getByContent(ctx, req.Date, req.Money, req.Desc)
+	tx := txFromCtx(ctx)
+	if tx == nil {
+		return 0, errors.New("failed to get tx from context")
+	}
+	qtx := er.q.WithTx(tx)
+	event, err := getByContent(ctx, qtx, req.Date, req.Money, req.Desc)
 	if err == nil {
 		return event.GetID(), nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
 
-	res, err := er.q.CreateEvent(ctx, query.CreateEventParams{
+	res, err := qtx.CreateEvent(ctx, query.CreateEventParams{
 		Dt: sql.NullTime{
 			Time:  req.Date,
 			Valid: true,
@@ -50,8 +55,9 @@ func (er *EventRepository) Create(ctx context.Context, req *usecase.EventCreateR
 	return res.LastInsertId()
 }
 
-func (er *EventRepository) getByContent(ctx context.Context, date time.Time, money int32, desc string) (*model.Event, error) {
-	res, err := er.q.GetEvent(ctx, query.GetEventParams{
+func getByContent(ctx context.Context, qtx *query.Queries,
+	date time.Time, money int32, desc string) (*model.Event, error) {
+	res, err := qtx.GetEvent(ctx, query.GetEventParams{
 		Dt: sql.NullTime{
 			Time:  date,
 			Valid: true,
@@ -84,7 +90,12 @@ func (er *EventRepository) GetWithoutTags(ctx context.Context, id int64) (*model
 }
 
 func (er *EventRepository) UpdateMoney(ctx context.Context, id int64, money int32) error {
-	err := er.q.UpdateEventMoney(ctx, query.UpdateEventMoneyParams{
+	tx := txFromCtx(ctx)
+	if tx == nil {
+		return errors.New("failed to get tx from context")
+	}
+	qtx := er.q.WithTx(tx)
+	err := qtx.UpdateEventMoney(ctx, query.UpdateEventMoneyParams{
 		ID: id,
 		Money: sql.NullInt32{
 			Int32: money,
@@ -98,7 +109,12 @@ func (er *EventRepository) UpdateMoney(ctx context.Context, id int64, money int3
 }
 
 func (er *EventRepository) Delete(ctx context.Context, id int64) error {
-	err := er.q.DeleteEventByID(ctx, id)
+	tx := txFromCtx(ctx)
+	if tx == nil {
+		return errors.New("failed to get tx from context")
+	}
+	qtx := er.q.WithTx(tx)
+	err := qtx.DeleteEventByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete event by ID: %w", err)
 	}
