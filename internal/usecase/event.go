@@ -163,47 +163,47 @@ func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, rel
 
 	slog.Info("Load credit events from file.", "file", file)
 
-	err := eu.tx.Do(ctx, func(ctx context.Context) error {
-		relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
+	relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
+	if err != nil {
+		return fmt.Errorf("failed to get tag: %w", err)
+	}
+
+	// Skip header
+	_ = csv.Read()
+	creditEventCreateReqs := make([]*EventCreateRequest, 0)
+	for {
+		event := csv.Read()
+		if event == nil {
+			break
+		}
+
+		if event[0] == "" {
+			continue
+		}
+		date, err := model.ParseDate(event[0])
 		if err != nil {
-			return fmt.Errorf("failed to get tag: %w", err)
+			return fmt.Errorf("failed to parse date: %w", err)
 		}
-
-		// Skip header
-		_ = csv.Read()
-		creditEventCreateReqs := make([]*EventCreateRequest, 0)
-		for {
-			event := csv.Read()
-			if event == nil {
-				break
-			}
-
-			if event[0] == "" {
-				continue
-			}
-			date, err := model.ParseDate(event[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse date: %w", err)
-			}
-			desc := event[1]
-			tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
-			if err != nil {
-				return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
-			}
-			tmpMoney *= -1
-			money := int32(tmpMoney)
-
-			creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
-				Date:  *date,
-				Money: money,
-				Desc:  model.FormatDesc(desc),
-			})
+		desc := event[1]
+		tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
+		if err != nil {
+			return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
 		}
+		tmpMoney *= -1
+		money := int32(tmpMoney)
 
-		if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
-			return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
-		}
+		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
+			Date:  *date,
+			Money: money,
+			Desc:  model.FormatDesc(desc),
+		})
+	}
 
+	if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
+		return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
+	}
+
+	err = eu.tx.Do(ctx, func(ctx context.Context) error {
 		for _, cecReq := range creditEventCreateReqs {
 			slog.Info("Create value.", "date", cecReq.Date,
 				"money", cecReq.Money, "desc", cecReq.Desc)
