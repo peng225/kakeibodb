@@ -14,17 +14,16 @@ generate:
 
 .PHONY: test
 test: $(KAKEIBODB)
-	go test -v ./...
+	go test -count=1 -v ./internal/...
 
-.PHONYE: test-setup
+.PHONY: test-setup
 test-setup:
 #	docker run -d --rm --env MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3307:3306 mysql:8
 	mysql -h 127.0.0.1 --port 3307 -B -u root < internal/test/setup.sql
 
-.PHONYE: test-cleanup
+.PHONY: test-cleanup
 test-cleanup:
 	mysql -h 127.0.0.1 --port 3307 -B -u root < internal/test/cleanup.sql
-
 
 .PHONY: clean
 clean:
