@@ -298,10 +298,10 @@ func TestSplit(t *testing.T) {
 	beforeCandyMoney := candyEvents[0].GetMoney()
 
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "11",
+	_, stderr, err = runKakeiboDB("event", "split", "--eventIDs", "11",
 		"--date", "2021-12-04", "--money", "-30", "--desc", "はちみつのど飴")
 	require.NoError(t, err, string(stderr))
-	_, stderr, err = runKakeiboDB("event", "split", "--eventID", "11",
+	_, stderr, err = runKakeiboDB("event", "split", "--eventIDs", "11",
 		"--date", "2021/12/05", "--money", "-30", "--desc", "きんかんのど飴")
 	require.NoError(t, err, string(stderr))
 

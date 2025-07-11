@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"kakeibodb/internal/event"
 	"kakeibodb/internal/model"
@@ -9,6 +10,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -163,47 +165,47 @@ func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, rel
 
 	slog.Info("Load credit events from file.", "file", file)
 
-	err := eu.tx.Do(ctx, func(ctx context.Context) error {
-		relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
+	relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
+	if err != nil {
+		return fmt.Errorf("failed to get tag: %w", err)
+	}
+
+	// Skip header
+	_ = csv.Read()
+	creditEventCreateReqs := make([]*EventCreateRequest, 0)
+	for {
+		event := csv.Read()
+		if event == nil {
+			break
+		}
+
+		if event[0] == "" {
+			continue
+		}
+		date, err := model.ParseDate(event[0])
 		if err != nil {
-			return fmt.Errorf("failed to get tag: %w", err)
+			return fmt.Errorf("failed to parse date: %w", err)
 		}
-
-		// Skip header
-		_ = csv.Read()
-		creditEventCreateReqs := make([]*EventCreateRequest, 0)
-		for {
-			event := csv.Read()
-			if event == nil {
-				break
-			}
-
-			if event[0] == "" {
-				continue
-			}
-			date, err := model.ParseDate(event[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse date: %w", err)
-			}
-			desc := event[1]
-			tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
-			if err != nil {
-				return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
-			}
-			tmpMoney *= -1
-			money := int32(tmpMoney)
-
-			creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
-				Date:  *date,
-				Money: money,
-				Desc:  model.FormatDesc(desc),
-			})
+		desc := event[1]
+		tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
+		if err != nil {
+			return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
 		}
+		tmpMoney *= -1
+		money := int32(tmpMoney)
 
-		if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
-			return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
-		}
+		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
+			Date:  *date,
+			Money: money,
+			Desc:  model.FormatDesc(desc),
+		})
+	}
 
+	if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {
+		return fmt.Errorf("sum of credit events does not match original event (ID=%d)", relatedEventID)
+	}
+
+	err = eu.tx.Do(ctx, func(ctx context.Context) error {
 		for _, cecReq := range creditEventCreateReqs {
 			slog.Info("Create value.", "date", cecReq.Date,
 				"money", cecReq.Money, "desc", cecReq.Desc)
@@ -230,56 +232,82 @@ func (eu *EventUseCase) deletingCorrectEvent(relatedEventMoney int32, creditEven
 	return moneySum == relatedEventMoney
 }
 
-func (eu *EventUseCase) getEventIDFromSplitBaseTag(ctx context.Context, splitBaseTagName string,
-	date time.Time) (int64, error) {
-	from := date.AddDate(0, -2, -5)
+func (eu *EventUseCase) getEventIDsFromSplitBaseTag(ctx context.Context, splitBaseTagName string,
+	date time.Time) ([]int64, error) {
+	const LOOK_BACK_YEARS = -1
+	const LOOK_BACK_MONTHS = 0
+	const LOOK_BACK_DAYS = -5
+	from := date.AddDate(LOOK_BACK_YEARS, LOOK_BACK_MONTHS, LOOK_BACK_DAYS)
 	events, err := eu.eventRepo.ListOutcomesWithTags(ctx, []string{splitBaseTagName}, from, date)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return events[len(events)-1].GetID(), nil
+	// Sort events in descending order by date.
+	slices.SortStableFunc(events, func(a, b *model.Event) int {
+		if a.GetDate().After(b.GetDate()) {
+			return -1
+		} else if a.GetDate().Before(b.GetDate()) {
+			return 1
+		}
+		return 0
+	})
+	eventIDs := make([]int64, len(events))
+	for i, event := range events {
+		eventIDs[i] = event.GetID()
+	}
+
+	return eventIDs, nil
 }
 
-func (eu *EventUseCase) Split(ctx context.Context, eventID int64, splitBaseTagName string,
+func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTagName string,
 	date time.Time, money int32, desc string) error {
-	if eventID == -1 {
+	if money == 0 {
+		return errors.New("money should not be 0")
+	}
+	if len(eventIDs) == 0 {
 		var err error
-		eventID, err = eu.getEventIDFromSplitBaseTag(ctx, splitBaseTagName, date)
+		eventIDs, err = eu.getEventIDsFromSplitBaseTag(ctx, splitBaseTagName, date)
 		if err != nil {
 			return err
 		}
-		slog.Info("Auto detected.", "eventID", eventID)
+		slog.Info("Auto detected.", "eventIDs", eventIDs)
 	}
 
-	event, err := eu.eventRepo.GetWithoutTags(ctx, eventID)
-	if err != nil {
-		return fmt.Errorf("failed to get event: %w", err)
-	}
-
-	if event.GetMoney()*money <= 0 {
-		return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
-	}
-	if math.Abs(float64(event.GetMoney())) < math.Abs(float64(money)) {
-		return fmt.Errorf("abs(to be split event money)(%f) should be larger than or equal to abs(splitting event money)(%f)",
-			math.Abs(float64(event.GetMoney())), math.Abs(float64(money)))
-	}
-
-	err = eu.tx.Do(ctx, func(ctx context.Context) error {
-		// Update the existing event.
-		if event.GetMoney() == money {
-			err = eu.eventRepo.Delete(ctx, eventID)
+	err := eu.tx.Do(ctx, func(ctx context.Context) error {
+		currentMoney := money
+		for _, eventID := range eventIDs {
+			event, err := eu.eventRepo.GetWithoutTags(ctx, eventID)
 			if err != nil {
-				return fmt.Errorf("failed to delete event: %w", err)
+				return fmt.Errorf("failed to get event: %w", err)
 			}
-		} else {
-			err = eu.eventRepo.UpdateMoney(ctx, eventID, event.GetMoney()-money)
-			if err != nil {
-				return fmt.Errorf("failed to update event money: %w", err)
+
+			if event.GetMoney()*currentMoney <= 0 {
+				return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
+			}
+
+			// Update the existing event.
+			if math.Abs(float64(event.GetMoney())) <= math.Abs(float64(currentMoney)) {
+				err = eu.eventRepo.Delete(ctx, event.GetID())
+				if err != nil {
+					return fmt.Errorf("failed to delete event: %w", err)
+				}
+				currentMoney -= event.GetMoney()
+			} else {
+				err = eu.eventRepo.UpdateMoney(ctx, event.GetID(), event.GetMoney()-currentMoney)
+				if err != nil {
+					return fmt.Errorf("failed to update event money: %w", err)
+				}
+				currentMoney = 0
+			}
+			if currentMoney == 0 {
+				break
 			}
 		}
-
+		if currentMoney != 0 {
+			return fmt.Errorf("money sum of specified events is not sufficient")
+		}
 		// Insert a new event.
-		_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
+		_, err := eu.eventRepo.Create(ctx, &EventCreateRequest{
 			Date:  date,
 			Money: money,
 			Desc:  model.FormatDesc(desc),
