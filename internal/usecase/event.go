@@ -390,6 +390,10 @@ func (apu *ApplyPatternUseCase) ApplyPattern(ctx context.Context, from, to time.
 
 		for _, event := range events {
 			for _, pattern := range patterns {
+				if len(pattern.GetTagNames()) == 0 {
+					slog.Warn("Pattern with no tags found. Skip.", "key", pattern.GetKey())
+					continue
+				}
 				if strings.Contains(event.GetDesc(), pattern.GetKey()) {
 					for _, tagName := range pattern.GetTagNames() {
 						err = apu.etmRepo.Map(ctx, event.GetID(), tagName)

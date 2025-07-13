@@ -63,6 +63,10 @@ func (pr *PatternRepository) List(ctx context.Context) ([]*model.Pattern, error)
 	patterns := make([]*model.Pattern, 0)
 	for _, pwt := range res {
 		p := model.NewPattern(pwt.ID, pwt.KeyString.String, nil)
+		if !pwt.Tagname.Valid {
+			patterns = append(patterns, p)
+			continue
+		}
 		tagName := pwt.Tagname.String
 		if len(patterns) == 0 {
 			p.AddTag(tagName)
