@@ -291,6 +291,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 				if err != nil {
 					return fmt.Errorf("failed to delete event: %w", err)
 				}
+				slog.Info("An event has been deleted.", "eventID", event.GetID())
 				currentMoney -= event.GetMoney()
 			} else {
 				err = eu.eventRepo.UpdateMoney(ctx, event.GetID(), event.GetMoney()-currentMoney)
@@ -307,7 +308,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 			return fmt.Errorf("money sum of specified events is not sufficient")
 		}
 		// Insert a new event.
-		_, err := eu.eventRepo.Create(ctx, &EventCreateRequest{
+		id, err := eu.eventRepo.Create(ctx, &EventCreateRequest{
 			Date:  date,
 			Money: money,
 			Desc:  model.FormatDesc(desc),
@@ -315,6 +316,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 		if err != nil {
 			return fmt.Errorf("failed to create event: %w", err)
 		}
+		slog.Info("A new event has been created.", "eventID", id)
 		return nil
 	})
 	return err
