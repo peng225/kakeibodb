@@ -110,7 +110,7 @@ func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 				}
 				money = int32(tmpMoney)
 			}
-			slog.Info("Create value.", "date", date,
+			slog.Info("Create value.", "date", date.Format(time.DateOnly),
 				"money", money, "desc", desc)
 			_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
 				Date:  *date,
@@ -207,7 +207,7 @@ func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, rel
 
 	err = eu.tx.Do(ctx, func(ctx context.Context) error {
 		for _, cecReq := range creditEventCreateReqs {
-			slog.Info("Create value.", "date", cecReq.Date,
+			slog.Info("Create value.", "date", cecReq.Date.Format(time.DateOnly),
 				"money", cecReq.Money, "desc", cecReq.Desc)
 			_, err = eu.eventRepo.Create(ctx, cecReq)
 			if err != nil {
