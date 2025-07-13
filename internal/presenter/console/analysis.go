@@ -18,7 +18,7 @@ func printHeader(headerItems []string) {
 		if i == len(headerItems)-1 {
 			fmt.Println("")
 		} else {
-			fmt.Print("\t")
+			fmt.Print(",\t")
 		}
 	}
 }
@@ -27,7 +27,7 @@ func (ap *AnalysisPresenter) Present(report *usecase.TimeSeriesReport) {
 	printHeader(report.HeaderItems)
 
 	for _, item := range report.Items {
-		fmt.Printf("%s\t%d\t%d\t",
+		fmt.Printf("%s,\t%d,\t%d,\t",
 			item.Date.Format("2006/01/02"), item.TotalIncome, item.TotalOutcome,
 		)
 		for i, rakedItem := range item.HighlyRankedOutcomeItems {
@@ -35,7 +35,7 @@ func (ap *AnalysisPresenter) Present(report *usecase.TimeSeriesReport) {
 			if i == len(item.HighlyRankedOutcomeItems)-1 {
 				fmt.Println("")
 			} else {
-				fmt.Print("\t")
+				fmt.Print(",\t")
 			}
 		}
 	}
