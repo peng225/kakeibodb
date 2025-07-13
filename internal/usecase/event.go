@@ -259,6 +259,15 @@ func (eu *EventUseCase) getEventIDsFromSplitBaseTag(ctx context.Context, splitBa
 	return eventIDs, nil
 }
 
+func sign(num int32) int32 {
+	if num > 0 {
+		return 1
+	} else if num < 0 {
+		return -1
+	}
+	return 0
+}
+
 func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTagName string,
 	date time.Time, money int32, desc string) error {
 	if money == 0 {
@@ -281,7 +290,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 				return fmt.Errorf("failed to get event: %w", err)
 			}
 
-			if event.GetMoney()*currentMoney <= 0 {
+			if sign(event.GetMoney())*sign(currentMoney) <= 0 {
 				return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
 			}
 
