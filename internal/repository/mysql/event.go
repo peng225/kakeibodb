@@ -202,6 +202,10 @@ func (er *EventRepository) ListOutcomesWithTags(ctx context.Context, tagNames []
 	events := make([]*model.Event, 0)
 	for _, ewt := range res {
 		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		if !ewt.Tagname.Valid {
+			events = append(events, e)
+			continue
+		}
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)
@@ -240,6 +244,10 @@ func (er *EventRepository) List(ctx context.Context, from, to time.Time) ([]*mod
 	events := make([]*model.Event, 0)
 	for _, ewt := range res {
 		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		if !ewt.Tagname.Valid {
+			events = append(events, e)
+			continue
+		}
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)
@@ -287,6 +295,10 @@ func (er *EventRepository) ListWithTags(ctx context.Context, tagNames []string,
 	events := make([]*model.Event, 0)
 	for _, ewt := range res {
 		e := model.NewEvent(ewt.ID, ewt.Dt.Time, ewt.Money.Int32, ewt.Description.String, nil)
+		if !ewt.Tagname.Valid {
+			events = append(events, e)
+			continue
+		}
 		tagName := ewt.Tagname.String
 		if len(events) == 0 {
 			e.AddTag(tagName)

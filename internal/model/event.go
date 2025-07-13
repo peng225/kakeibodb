@@ -36,8 +36,9 @@ func ParseDate(ds string) (*time.Time, error) {
 		"2006-01-02",
 	}
 	var err error
+	var date time.Time
 	for _, layout := range layouts {
-		date, err := time.Parse(layout, ds)
+		date, err = time.Parse(layout, ds)
 		if err == nil {
 			return &date, nil
 		}
