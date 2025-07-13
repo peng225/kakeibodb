@@ -110,7 +110,7 @@ func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 				}
 				money = int32(tmpMoney)
 			}
-			slog.Info("Create value.", "date", date,
+			slog.Info("Create value.", "date", date.Format(time.DateOnly),
 				"money", money, "desc", desc)
 			_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
 				Date:  *date,
@@ -207,7 +207,7 @@ func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, rel
 
 	err = eu.tx.Do(ctx, func(ctx context.Context) error {
 		for _, cecReq := range creditEventCreateReqs {
-			slog.Info("Create value.", "date", cecReq.Date,
+			slog.Info("Create value.", "date", cecReq.Date.Format(time.DateOnly),
 				"money", cecReq.Money, "desc", cecReq.Desc)
 			_, err = eu.eventRepo.Create(ctx, cecReq)
 			if err != nil {
@@ -259,6 +259,15 @@ func (eu *EventUseCase) getEventIDsFromSplitBaseTag(ctx context.Context, splitBa
 	return eventIDs, nil
 }
 
+func sign(num int32) int32 {
+	if num > 0 {
+		return 1
+	} else if num < 0 {
+		return -1
+	}
+	return 0
+}
+
 func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTagName string,
 	date time.Time, money int32, desc string) error {
 	if money == 0 {
@@ -281,7 +290,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 				return fmt.Errorf("failed to get event: %w", err)
 			}
 
-			if event.GetMoney()*currentMoney <= 0 {
+			if sign(event.GetMoney())*sign(currentMoney) <= 0 {
 				return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
 			}
 
