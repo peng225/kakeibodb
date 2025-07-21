@@ -22,7 +22,7 @@ func TestSplit_SingleEventID(t *testing.T) {
 		Desc:  "fruit",
 	})
 	require.NoError(t, err)
-	eventUC := usecase.NewEventUseCase(fakeEventRepo, tx)
+	eventUC := usecase.NewEventUseCase(fakeEventRepo, nil, tx)
 	err = eventUC.Split(ctx, []int64{0}, "",
 		time.Date(2025, 6, 6, 0, 0, 0, 0, time.Local), -30,
 		"apple")
@@ -45,7 +45,7 @@ func TestSplit_SingleEventID_SameMoney(t *testing.T) {
 		Desc:  "fruit",
 	})
 	require.NoError(t, err)
-	eventUC := usecase.NewEventUseCase(fakeEventRepo, tx)
+	eventUC := usecase.NewEventUseCase(fakeEventRepo, nil, tx)
 	err = eventUC.Split(ctx, []int64{0}, "",
 		time.Date(2025, 6, 6, 0, 0, 0, 0, time.Local), -100,
 		"apple")
@@ -73,7 +73,7 @@ func TestSplit_TwoEventIDs(t *testing.T) {
 		Desc:  "fruit2",
 	})
 	require.NoError(t, err)
-	eventUC := usecase.NewEventUseCase(fakeEventRepo, tx)
+	eventUC := usecase.NewEventUseCase(fakeEventRepo, nil, tx)
 	err = eventUC.Split(ctx, []int64{0, 1}, "",
 		time.Date(2025, 6, 7, 0, 0, 0, 0, time.Local), -160,
 		"apple")
@@ -100,7 +100,7 @@ func TestSplit_SingleEvent_AutoDetect(t *testing.T) {
 	require.NoError(t, err)
 	err = fakeEventRepo.AddTag(ctx, 0, "fruit")
 	require.NoError(t, err)
-	eventUC := usecase.NewEventUseCase(fakeEventRepo, tx)
+	eventUC := usecase.NewEventUseCase(fakeEventRepo, nil, tx)
 
 	err = os.Setenv("KAKEIBODB_SPLIT_BASE_TAG_NAME", "fruit")
 	require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestSplit_TwoEventIDs_AutoDetect(t *testing.T) {
 	require.NoError(t, err)
 	err = fakeEventRepo.AddTag(ctx, 1, "fruit")
 	require.NoError(t, err)
-	eventUC := usecase.NewEventUseCase(fakeEventRepo, tx)
+	eventUC := usecase.NewEventUseCase(fakeEventRepo, nil, tx)
 	err = os.Setenv("KAKEIBODB_SPLIT_BASE_TAG_NAME", "fruit")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.Unsetenv("KAKEIBODB_SPLIT_BASE_TAG_NAME") })
