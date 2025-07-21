@@ -162,7 +162,8 @@ func TestTag(t *testing.T) {
 func TestUserEnv(t *testing.T) {
 	dbSetup(t)
 	t.Cleanup(func() { dbCleanup(t) })
-	os.Setenv("KAKEIBODB_USER", "test")
+	err := os.Setenv("KAKEIBODB_USER", "test")
+	require.NoError(t, err)
 	t.Cleanup(func() { os.Unsetenv("KAKEIBODB_USER") })
 	completeArgs := append([]string{"event", "list"}, commonOptions[:4]...)
 	_, stderr, err := runCommand(nil, kakeibodb, completeArgs...)
@@ -323,7 +324,8 @@ func TestSplit(t *testing.T) {
 	}
 	require.Equal(t, beforeCandyMoney, afterCandyMoneySum)
 
-	os.Setenv("KAKEIBODB_SPLIT_BASE_TAG_NAME", "candy")
+	err = os.Setenv("KAKEIBODB_SPLIT_BASE_TAG_NAME", "candy")
+	require.NoError(t, err)
 	t.Cleanup(func() { os.Unsetenv("KAKEIBODB_SPLIT_BASE_TAG_NAME") })
 	_, stderr, err = runKakeiboDB("event", "split",
 		"--date", "2021-12-06", "--money", "-40", "--desc", "ミルク飴")

@@ -15,11 +15,12 @@ import (
 func TestGetMoneySumGroupedByTagName_NoTag(t *testing.T) {
 	fakeEventRepo := fake.NewEventFakeRepository()
 	ctx := context.Background()
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	_, err := fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 5, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
+	require.NoError(t, err)
 	analysisUC := usecase.NewAnalysisUseCase(fakeEventRepo, nil)
 	from := time.Date(2025, 6, 1, 0, 0, 0, 0, time.Local)
 	to := time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local)
@@ -32,36 +33,46 @@ func TestGetMoneySumGroupedByTagName_NoTag(t *testing.T) {
 func TestGetMoneySumGroupedByTagName_BoundaryCheck(t *testing.T) {
 	fakeEventRepo := fake.NewEventFakeRepository()
 	ctx := context.Background()
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	_, err := fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 5, 31, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 1, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 15, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 30, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.AddTag(ctx, 0, "fruit")
-	fakeEventRepo.AddTag(ctx, 1, "fruit")
-	fakeEventRepo.AddTag(ctx, 2, "fruit")
-	fakeEventRepo.AddTag(ctx, 3, "fruit")
-	fakeEventRepo.AddTag(ctx, 4, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 0, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 1, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 2, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 3, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 4, "fruit")
+	require.NoError(t, err)
 	analysisUC := usecase.NewAnalysisUseCase(fakeEventRepo, nil)
 	from := time.Date(2025, 6, 1, 0, 0, 0, 0, time.Local)
 	to := time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local)
@@ -74,24 +85,30 @@ func TestGetMoneySumGroupedByTagName_BoundaryCheck(t *testing.T) {
 func TestGetMoneySumGroupedByTagName_MultipleTags(t *testing.T) {
 	fakeEventRepo := fake.NewEventFakeRepository()
 	ctx := context.Background()
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	_, err := fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 5, 0, 0, 0, 0, time.Local),
 		Money: int32(-100),
 		Desc:  "apple",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 6, 0, 0, 0, 0, time.Local),
 		Money: int32(-50),
 		Desc:  "pencil",
 	})
-	fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
+	require.NoError(t, err)
+	_, err = fakeEventRepo.Create(ctx, &usecase.EventCreateRequest{
 		Date:  time.Date(2025, 6, 15, 0, 0, 0, 0, time.Local),
 		Money: int32(-200),
 		Desc:  "orange",
 	})
-	fakeEventRepo.AddTag(ctx, 0, "fruit")
-	fakeEventRepo.AddTag(ctx, 1, "stationary")
-	fakeEventRepo.AddTag(ctx, 2, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 0, "fruit")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 1, "stationary")
+	require.NoError(t, err)
+	err = fakeEventRepo.AddTag(ctx, 2, "fruit")
+	require.NoError(t, err)
 	analysisUC := usecase.NewAnalysisUseCase(fakeEventRepo, nil)
 	from := time.Date(2025, 6, 1, 0, 0, 0, 0, time.Local)
 	to := time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local)
