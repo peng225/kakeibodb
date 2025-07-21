@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"kakeibodb/internal/event"
+	"io"
+	"iter"
 	"kakeibodb/internal/model"
 	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -22,9 +22,14 @@ type EventCreateRequest struct {
 	Desc  string
 }
 
+type EvenCreateRequestLoader interface {
+	Load(f io.Reader) iter.Seq[*EventCreateRequest]
+}
+
 type EventUseCase struct {
-	eventRepo EventRepository
-	tx        Transaction
+	eventRepo   EventRepository
+	ecReqLoader EvenCreateRequestLoader
+	tx          Transaction
 }
 
 type EventPresentUseCase struct {
@@ -42,10 +47,11 @@ type ApplyPatternUseCase struct {
 	patternRepo PatternRepository
 }
 
-func NewEventUseCase(eventRepo EventRepository, tx Transaction) *EventUseCase {
+func NewEventUseCase(eventRepo EventRepository, ecReqLoader EvenCreateRequestLoader, tx Transaction) *EventUseCase {
 	return &EventUseCase{
-		eventRepo: eventRepo,
-		tx:        tx,
+		eventRepo:   eventRepo,
+		ecReqLoader: ecReqLoader,
+		tx:          tx,
 	}
 }
 
@@ -65,61 +71,23 @@ func NewEventTagMapUseCase(etmRepo EventTagMapRepository) *EventTagMapUsecase {
 func NewApplyPatternUseCase(eventRepo EventRepository, etmRepo EventTagMapRepository,
 	patternRepo PatternRepository, tx Transaction) *ApplyPatternUseCase {
 	return &ApplyPatternUseCase{
-		EventUseCase: *NewEventUseCase(eventRepo, tx),
+		EventUseCase: *NewEventUseCase(eventRepo, nil, tx),
 		etmRepo:      etmRepo,
 		patternRepo:  patternRepo,
 	}
 }
 
 func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
-	// FIXME: Don't want to depend on a specific file format.
-	csv := event.NewCSV()
-	err := csv.Open(file)
+	f, err := os.Open(file)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", file, err)
+		return fmt.Errorf("failed to open %s: %w", file, err)
 	}
 
-	slog.Info("Load events from file.", "file", file)
-
-	// Skip header
-	_ = csv.Read()
 	err = eu.tx.Do(ctx, func(ctx context.Context) error {
-		for {
-			event := csv.Read()
-			if event == nil {
-				break
-			}
-			date, err := model.ParseDate(event[0])
-			if err != nil {
-				return fmt.Errorf("failed to parse date: %w", err)
-			}
-			decrease := event[1]
-			increase := event[2]
-			desc := event[3]
-
-			var money int32
-			if (decrease == "" && increase == "") || (decrease != "" && increase != "") {
-				return fmt.Errorf("bad event record. decrease = %s, increase = %s", decrease, increase)
-			} else if decrease != "" {
-				tmpMoney, err := strconv.ParseInt(decrease, 10, 32)
-				if err != nil {
-					return fmt.Errorf(`failed to parse "%s" as int: %w`, decrease, err)
-				}
-				money = -1 * int32(tmpMoney)
-			} else {
-				tmpMoney, err := strconv.ParseInt(increase, 10, 32)
-				if err != nil {
-					return fmt.Errorf(`failed to parse "%s" as int: %w`, increase, err)
-				}
-				money = int32(tmpMoney)
-			}
-			slog.Info("Create value.", "date", date.Format(time.DateOnly),
-				"money", money, "desc", desc)
-			_, err = eu.eventRepo.Create(ctx, &EventCreateRequest{
-				Date:  *date,
-				Money: money,
-				Desc:  model.FormatDesc(desc),
-			})
+		for req := range eu.ecReqLoader.Load(f) {
+			slog.Info("Create value.", "date", req.Date.Format(time.DateOnly),
+				"money", req.Money, "desc", req.Desc)
+			_, err := eu.eventRepo.Create(ctx, req)
 			if err != nil {
 				return fmt.Errorf("failed to create event: %w", err)
 			}
@@ -130,7 +98,7 @@ func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 	return err
 }
 
-func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
+func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir, ext string) error {
 	var files []string
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -142,7 +110,7 @@ func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
 			return nil
 		}
 
-		if filepath.Ext(path) == ".csv" {
+		if filepath.Ext(path) == "."+ext {
 			files = append(files, path)
 		}
 
@@ -163,48 +131,19 @@ func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
 }
 
 func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, relatedEventID int64) error {
-	csv := event.NewCSV()
-	err := csv.Open(file)
+	f, err := os.Open(file)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s: %w", file, err)
+		return fmt.Errorf("failed to open %s: %w", file, err)
 	}
 
-	slog.Info("Load credit events from file.", "file", file)
+	creditEventCreateReqs := make([]*EventCreateRequest, 0)
+	for req := range eu.ecReqLoader.Load(f) {
+		creditEventCreateReqs = append(creditEventCreateReqs, req)
+	}
 
 	relatedEvent, err := eu.eventRepo.GetWithoutTags(ctx, relatedEventID)
 	if err != nil {
 		return fmt.Errorf("failed to get tag: %w", err)
-	}
-
-	// Skip header
-	_ = csv.Read()
-	creditEventCreateReqs := make([]*EventCreateRequest, 0)
-	for {
-		event := csv.Read()
-		if event == nil {
-			break
-		}
-
-		if event[0] == "" {
-			continue
-		}
-		date, err := model.ParseDate(event[0])
-		if err != nil {
-			return fmt.Errorf("failed to parse date: %w", err)
-		}
-		desc := event[1]
-		tmpMoney, err := strconv.ParseInt(event[2], 10, 32)
-		if err != nil {
-			return fmt.Errorf(`failed to parse "%s" as int: %w`, event[2], err)
-		}
-		tmpMoney *= -1
-		money := int32(tmpMoney)
-
-		creditEventCreateReqs = append(creditEventCreateReqs, &EventCreateRequest{
-			Date:  *date,
-			Money: money,
-			Desc:  model.FormatDesc(desc),
-		})
 	}
 
 	if !eu.deletingCorrectEvent(relatedEvent.GetMoney(), creditEventCreateReqs) {

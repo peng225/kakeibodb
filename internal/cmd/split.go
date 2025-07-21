@@ -76,7 +76,7 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		eventRepo := mysql.NewEventRepository(db)
 		tx := mysql.NewTransaction(db)
-		eventUC := usecase.NewEventUseCase(eventRepo, tx)
+		eventUC := usecase.NewEventUseCase(eventRepo, nil, tx)
 		ctx := context.Background()
 		err = eventUC.Split(ctx, eventIDs, splitBaseTagName, *date, money, desc)
 		if err != nil {

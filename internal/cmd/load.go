@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"kakeibodb/internal/loader"
 	"kakeibodb/internal/repository/mysql"
 	"kakeibodb/internal/usecase"
 
@@ -51,10 +52,11 @@ to quickly create a Cobra application.`,
 		defer db.Close()
 		eventRepo := mysql.NewEventRepository(db)
 		tx := mysql.NewTransaction(db)
-		eventUC := usecase.NewEventUseCase(eventRepo, tx)
 
 		ctx := context.Background()
 		if credit {
+			ecReqLoader := loader.NewCreditLoader()
+			eventUC := usecase.NewEventUseCase(eventRepo, ecReqLoader, tx)
 			if file == "" {
 				slog.Error("File path must be specified for credit mode.")
 				os.Exit(1)
@@ -65,10 +67,12 @@ to quickly create a Cobra application.`,
 			}
 			err = eventUC.LoadCreditFromFile(ctx, file, parentEventID)
 		} else {
+			ecReqLoader := loader.NewBankLoader()
+			eventUC := usecase.NewEventUseCase(eventRepo, ecReqLoader, tx)
 			if file != "" {
 				err = eventUC.LoadFromFile(ctx, file)
 			} else {
-				err = eventUC.LoadFromDir(ctx, dir)
+				err = eventUC.LoadFromDir(ctx, dir, "csv")
 			}
 		}
 		if err != nil {
