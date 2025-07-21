@@ -74,13 +74,16 @@ func NewApplyPatternUseCase(eventRepo EventRepository, etmRepo EventTagMapReposi
 func (eu *EventUseCase) LoadFromFile(ctx context.Context, file string) error {
 	// FIXME: Don't want to depend on a specific file format.
 	csv := event.NewCSV()
-	csv.Open(file)
+	err := csv.Open(file)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", file, err)
+	}
 
 	slog.Info("Load events from file.", "file", file)
 
 	// Skip header
 	_ = csv.Read()
-	err := eu.tx.Do(ctx, func(ctx context.Context) error {
+	err = eu.tx.Do(ctx, func(ctx context.Context) error {
 		for {
 			event := csv.Read()
 			if event == nil {
@@ -161,7 +164,10 @@ func (eu *EventUseCase) LoadFromDir(ctx context.Context, dir string) error {
 
 func (eu *EventUseCase) LoadCreditFromFile(ctx context.Context, file string, relatedEventID int64) error {
 	csv := event.NewCSV()
-	csv.Open(file)
+	err := csv.Open(file)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", file, err)
+	}
 
 	slog.Info("Load credit events from file.", "file", file)
 
@@ -291,7 +297,7 @@ func (eu *EventUseCase) Split(ctx context.Context, eventIDs []int64, splitBaseTa
 			}
 
 			if sign(event.GetMoney())*sign(currentMoney) <= 0 {
-				return fmt.Errorf("Income/Outcome event can be split only by another income/outcome event.")
+				return fmt.Errorf("income/outcome event can be split only by another income/outcome event")
 			}
 
 			// Update the existing event.

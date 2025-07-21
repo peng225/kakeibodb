@@ -142,6 +142,9 @@ func (au *AnalysisUseCase) TimeSeries(ctx context.Context, from, to time.Time, i
 		msGroupedByTagNameForEveryWindow = append(msGroupedByTagNameForEveryWindow, msGroupedByTagName)
 
 		totalIncome, totalOutcome, err := au.getMoneyTotal(ctx, windowFrom, windowTo)
+		if err != nil {
+			return err
+		}
 		totalIncomeForEveryWindow = append(totalIncomeForEveryWindow, totalIncome)
 		totalOutcomeForEveryWindow = append(totalOutcomeForEveryWindow, totalOutcome)
 	}
