@@ -318,7 +318,7 @@ func (etmu *EventTagMapUsecase) AddTag(ctx context.Context, eventID int64, tagNa
 	for _, tagName := range tagNames {
 		err := etmu.etmRepo.Map(ctx, eventID, tagName)
 		if err != nil {
-			return fmt.Errorf("failed to remove tag: %w", err)
+			return fmt.Errorf("failed to add tag: %w", err)
 		}
 	}
 	return nil
@@ -327,7 +327,7 @@ func (etmu *EventTagMapUsecase) AddTag(ctx context.Context, eventID int64, tagNa
 func (etmu *EventTagMapUsecase) RemoveTag(ctx context.Context, eventID int64, tagName string) error {
 	err := etmu.etmRepo.Unmap(ctx, eventID, tagName)
 	if err != nil {
-		return fmt.Errorf("failed to add tag: %w", err)
+		return fmt.Errorf("failed to remove tag: %w", err)
 	}
 	return err
 }
